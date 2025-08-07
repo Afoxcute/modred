@@ -1,4 +1,9 @@
-import { Chain, Address, createPublicClient, http } from 'viem'
+import { Chain, Address, createPublicClient, http, createWalletClient } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 // Hedera testnet configuration
 const hederaTestnet: Chain = {
@@ -43,11 +48,15 @@ const networkConfig: NetworkConfig = {
 // Helper functions
 const validateEnvironmentVars = () => {
     if (!process.env.WALLET_PRIVATE_KEY) {
-        throw new Error('WALLET_PRIVATE_KEY is required in .env file')
+        console.warn('WALLET_PRIVATE_KEY not found in .env file. Some features may not work.')
+        console.log('Please create a .env file in the backend directory with:')
+        console.log('WALLET_PRIVATE_KEY=0x<your_64_character_private_key>')
+        return false
     }
+    return true
 }
 
-validateEnvironmentVars()
+const hasValidConfig = validateEnvironmentVars()
 
 export const networkInfo = {
     ...networkConfig,
@@ -60,7 +69,17 @@ const baseConfig = {
 } as const
 
 export const publicClient = createPublicClient(baseConfig)
-export const walletClient = publicClient
+
+// Create account from private key (only if private key is provided and valid)
+export const account = (hasValidConfig && process.env.WALLET_PRIVATE_KEY && process.env.WALLET_PRIVATE_KEY.length === 66)
+    ? privateKeyToAccount(process.env.WALLET_PRIVATE_KEY as `0x${string}`)
+    : null
+
+// Create wallet client
+export const walletClient = createWalletClient({
+    ...baseConfig,
+    account: account || undefined,
+})
 
 // Export constants
 export const NATIVE_TOKEN_ADDRESS = networkInfo.nativeTokenAddress

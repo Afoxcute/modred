@@ -38,8 +38,7 @@ const handleLicenseMinting = async (req: Request, res: Response) => {
             return res.status(200).json(convertBigIntsToStrings(responseData));
         } else {
             return res.status(500).json({
-                error: result.message,
-                details: result.error
+                error: result.message
             });
         }
     } catch (err) {

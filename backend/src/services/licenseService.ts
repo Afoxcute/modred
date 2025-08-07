@@ -1,7 +1,7 @@
 import { mintLicenseOnHedera } from './storyService';
 import { Address } from 'viem';
 
-interface LicenseRequest {
+export interface LicenseRequest {
   tokenId: number;
   royaltyPercentage: number;
   duration: number;

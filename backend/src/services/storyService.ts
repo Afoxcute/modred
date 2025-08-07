@@ -99,6 +99,9 @@ export const registerIpWithHedera = async (
     modredIpContractAddress: Address
 ) => {
     try {
+        if (!account) {
+            throw new Error('Wallet account not configured. Please set WALLET_PRIVATE_KEY in .env file.');
+        }
         console.log('ipHash:', ipHash);
         console.log('metadata:', metadata);
         console.log('isEncrypted:', isEncrypted);
@@ -118,8 +121,7 @@ export const registerIpWithHedera = async (
 
         const hash = await walletClient.writeContract({
             ...request,
-            account: account,
-  });
+        });
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
@@ -159,6 +161,9 @@ export const mintLicenseOnHedera = async (
     modredIpContractAddress: Address
 ) => {
     try {
+        if (!account) {
+            throw new Error('Wallet account not configured. Please set WALLET_PRIVATE_KEY in .env file.');
+        }
         const { request } = await publicClient.simulateContract({
             address: modredIpContractAddress,
             abi: MODRED_IP_ABI,
@@ -175,7 +180,6 @@ export const mintLicenseOnHedera = async (
 
         const hash = await walletClient.writeContract({
             ...request,
-            account: account,
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
