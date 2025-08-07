@@ -5,21 +5,23 @@ import { convertBigIntsToStrings } from '../utils/bigIntSerializer';
 const handleLicenseMinting = async (req: Request, res: Response) => {
     console.log("🔥 Entered handleLicenseMinting");
     try {
-        const { tokenId, royaltyPercentage, duration, commercialUse, terms, modredIpContractAddress } = req.body;
+        const { ipTokenId, commercialUse, derivativeWorks, exclusive, revenueShare, duration, terms, modredIpContractAddress } = req.body;
         console.log("📦 Received license request:", req.body);
 
         // Validate required parameters
-        if (!tokenId || !royaltyPercentage || !duration || commercialUse === undefined || !terms || !modredIpContractAddress) {
+        if (!ipTokenId || commercialUse === undefined || derivativeWorks === undefined || exclusive === undefined || !revenueShare || !duration || !terms || !modredIpContractAddress) {
             return res.status(400).json({
-                error: 'Missing required parameters: tokenId, royaltyPercentage, duration, commercialUse, terms, modredIpContractAddress'
+                error: 'Missing required parameters: ipTokenId, commercialUse, derivativeWorks, exclusive, revenueShare, duration, terms, modredIpContractAddress'
             });
         }
 
         const licenseRequest: LicenseRequest = {
-            tokenId,
-            royaltyPercentage,
-            duration,
+            ipTokenId,
             commercialUse,
+            derivativeWorks,
+            exclusive,
+            revenueShare,
+            duration,
             terms,
             modredIpContractAddress
         };

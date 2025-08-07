@@ -153,10 +153,12 @@ export const registerIpWithHedera = async (
 };
 
 export const mintLicenseOnHedera = async (
-    tokenId: number,
-    royaltyPercentage: number,
-    duration: number,
+    ipTokenId: number,
     commercialUse: boolean,
+    derivativeWorks: boolean,
+    exclusive: boolean,
+    revenueShare: number,
+    duration: number,
     terms: string,
     modredIpContractAddress: Address
 ) => {
@@ -169,10 +171,12 @@ export const mintLicenseOnHedera = async (
             abi: MODRED_IP_ABI,
             functionName: 'mintLicense',
             args: [
-                BigInt(tokenId),
-                BigInt(royaltyPercentage),
-                BigInt(duration),
+                BigInt(ipTokenId),
                 commercialUse,
+                derivativeWorks,
+                exclusive,
+                BigInt(revenueShare),
+                BigInt(duration),
                 terms
             ],
             account: account.address,

@@ -2,10 +2,12 @@ import { mintLicenseOnHedera } from './storyService';
 import { Address } from 'viem';
 
 export interface LicenseRequest {
-  tokenId: number;
-  royaltyPercentage: number;
-  duration: number;
+  ipTokenId: number;
   commercialUse: boolean;
+  derivativeWorks: boolean;
+  exclusive: boolean;
+  revenueShare: number;
+  duration: number;
   terms: string;
   modredIpContractAddress: Address;
 }
@@ -13,10 +15,12 @@ export interface LicenseRequest {
 export const mintLicense = async (licenseRequest: LicenseRequest) => {
   try {
     const { txHash, blockNumber, explorerUrl } = await mintLicenseOnHedera(
-      licenseRequest.tokenId,
-      licenseRequest.royaltyPercentage,
-      licenseRequest.duration,
+      licenseRequest.ipTokenId,
       licenseRequest.commercialUse,
+      licenseRequest.derivativeWorks,
+      licenseRequest.exclusive,
+      licenseRequest.revenueShare,
+      licenseRequest.duration,
       licenseRequest.terms,
       licenseRequest.modredIpContractAddress
     );

@@ -36,7 +36,7 @@ const hederaTestnet = {
 import CONTRACT_ADDRESS_JSON from "./deployed_addresses.json";
 
 // Backend API configuration
-const BACKEND_URL = "https://usemodred-production-e07d.up.railway.app";
+const BACKEND_URL = "http://localhost:5000";
 
 // File validation and preview utilities
 const MAX_FILE_SIZE_MB = 50; // Maximum file size in megabytes
@@ -262,24 +262,56 @@ const wallets = [
   createWallet("global.safe"),
 ];
 
-// ModredIP Contract ABI (simplified for the functions we need)
+// ModredIP Contract ABI (for Hedera deployment)
 const MODRED_IP_ABI = [
+  {
+    inputs: [
+      { name: "ipHash", type: "string" },
+      { name: "metadata", type: "string" },
+      { name: "tokenUriString", type: "string" }
+    ],
+    name: "registerIP",
+    outputs: [
+      { name: "", type: "uint256" }
+    ],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
   {
     inputs: [
       { name: "tokenId", type: "uint256" }
     ],
     name: "getIPAsset",
     outputs: [
+      { name: "tokenId", type: "uint256" },
       { name: "owner", type: "address" },
       { name: "ipHash", type: "string" },
       { name: "metadata", type: "string" },
-      { name: "isEncrypted", type: "bool" },
+      { name: "isActive", type: "bool" },
       { name: "isDisputed", type: "bool" },
       { name: "registrationDate", type: "uint256" },
       { name: "totalRevenue", type: "uint256" },
-      { name: "royaltyTokens", type: "uint256" }
+      { name: "royaltyTokens", type: "uint256" },
+      { name: "tokenBoundAccount", type: "address" }
     ],
     stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "ipTokenId", type: "uint256" },
+      { name: "commercialUse", type: "bool" },
+      { name: "derivativeWorks", type: "bool" },
+      { name: "exclusive", type: "bool" },
+      { name: "revenueShare", type: "uint256" },
+      { name: "duration", type: "uint256" },
+      { name: "terms", type: "string" }
+    ],
+    name: "mintLicense",
+    outputs: [
+      { name: "", type: "uint256" }
+    ],
+    stateMutability: "nonpayable",
     type: "function"
   },
   {
@@ -288,13 +320,16 @@ const MODRED_IP_ABI = [
     ],
     name: "getLicense",
     outputs: [
+      { name: "licenseId", type: "uint256" },
+      { name: "ipTokenId", type: "uint256" },
       { name: "licensee", type: "address" },
-      { name: "tokenId", type: "uint256" },
-      { name: "royaltyPercentage", type: "uint256" },
+      { name: "commercialUse", type: "bool" },
+      { name: "derivativeWorks", type: "bool" },
+      { name: "exclusive", type: "bool" },
+      { name: "revenueShare", type: "uint256" },
       { name: "duration", type: "uint256" },
-      { name: "startDate", type: "uint256" },
+      { name: "issueDate", type: "uint256" },
       { name: "isActive", type: "bool" },
-      { name: "commercialUse", type: "bool" },
       { name: "terms", type: "string" }
     ],
     stateMutability: "view",
@@ -302,40 +337,16 @@ const MODRED_IP_ABI = [
   },
   {
     inputs: [],
-    name: "nextTokenId",
+    name: "totalIPs",
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function"
   },
   {
     inputs: [],
-    name: "nextLicenseId",
+    name: "totalLicenses",
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "ipHash", type: "string" },
-      { name: "metadata", type: "string" },
-      { name: "isEncrypted", type: "bool" }
-    ],
-    name: "registerIP",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "tokenId", type: "uint256" },
-      { name: "royaltyPercentage", type: "uint256" },
-      { name: "duration", type: "uint256" },
-      { name: "commercialUse", type: "bool" },
-      { name: "terms", type: "string" }
-    ],
-    name: "mintLicense",
-    outputs: [],
-    stateMutability: "nonpayable",
     type: "function"
   },
   {
@@ -354,6 +365,20 @@ const MODRED_IP_ABI = [
     name: "claimRoyalties",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [],
+    name: "ping",
+    outputs: [{ name: "", type: "string" }],
+    stateMutability: "pure",
+    type: "function"
+  },
+  {
+    inputs: [],
+    name: "version",
+    outputs: [{ name: "", type: "string" }],
+    stateMutability: "pure",
     type: "function"
   }
 ] as const;
@@ -660,49 +685,77 @@ export default function App({ thirdwebClient }: AppProps) {
 
     try {
       setLoading(true);
+      const contractAddress = CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"];
+      console.log('Contract address:', contractAddress);
+      console.log('Chain:', hederaTestnet);
+      
       const contract = getContract({
         abi: MODRED_IP_ABI,
           client: thirdwebClient,
           chain: hederaTestnet,
-        address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+        address: contractAddress,
       });
 
-      // Get next token ID
-      const nextId = await readContract({
-        contract,
-        method: "nextTokenId",
-        params: [],
-      });
-      const nextTokenIdNum = Number(nextId);
+      console.log('Contract instance created:', contract);
 
-      // Get next license ID
-      const nextLicenseId = await readContract({
+      // Test contract connection with ping
+      try {
+        console.log('Testing contract connection with ping...');
+        const pingResult = await readContract({
+          contract,
+          method: "ping",
+          params: [],
+        });
+        console.log('Ping result:', pingResult);
+      } catch (pingError) {
+        console.error('Ping failed:', pingError);
+        throw new Error(`Contract not accessible: ${pingError}`);
+      }
+
+      // Get total IPs
+      console.log('Calling totalIPs...');
+      const totalIPs = await readContract({
         contract,
-        method: "nextLicenseId",
+        method: "totalIPs",
         params: [],
       });
-      const nextLicenseIdNum = Number(nextLicenseId);
+      const totalIPsNum = Number(totalIPs);
+      console.log('Total IPs:', totalIPsNum);
+
+      // Get total licenses
+      const totalLicenses = await readContract({
+        contract,
+        method: "totalLicenses",
+        params: [],
+      });
+      const totalLicensesNum = Number(totalLicenses);
 
       // Load IP assets
       const newIpAssets = new Map<number, IPAsset>();
-      for (let i = 1; i < nextTokenIdNum; i++) {
+      console.log(`Loading ${totalIPsNum} IP assets...`);
+      
+      for (let i = 0; i < totalIPsNum; i++) {
         try {
           const ipAsset = await readContract({
             contract,
             method: "getIPAsset",
             params: [BigInt(i)],
           });
+          
+          console.log(`IP Asset ${i}:`, ipAsset);
+          
           newIpAssets.set(i, {
-            owner: ipAsset[0],
-            ipHash: ipAsset[1],
-            metadata: ipAsset[2],
-            isEncrypted: ipAsset[3],
-            isDisputed: ipAsset[4],
-            registrationDate: ipAsset[5],
-            totalRevenue: ipAsset[6],
-            royaltyTokens: ipAsset[7],
+            owner: ipAsset[1], // owner is at index 1
+            ipHash: ipAsset[2], // ipHash is at index 2
+            metadata: ipAsset[3], // metadata is at index 3
+            isEncrypted: false, // this field doesn't exist in the new contract, default to false
+            isDisputed: ipAsset[5], // isDisputed is at index 5
+            registrationDate: ipAsset[6], // registrationDate is at index 6
+            totalRevenue: ipAsset[7], // totalRevenue is at index 7
+            royaltyTokens: ipAsset[8], // royaltyTokens is at index 8
           });
         } catch (error) {
+          console.log(`Failed to load IP asset ${i}:`, error);
           // Token doesn't exist, skip
         }
       }
@@ -726,24 +779,30 @@ export default function App({ thirdwebClient }: AppProps) {
 
       // Load licenses
       const newLicenses = new Map<number, License>();
-      for (let i = 1; i < nextLicenseIdNum; i++) {
+      console.log(`Loading ${totalLicensesNum} licenses...`);
+      
+      for (let i = 0; i < totalLicensesNum; i++) {
         try {
           const license = await readContract({
             contract,
             method: "getLicense",
             params: [BigInt(i)],
           });
+          
+          console.log(`License ${i}:`, license);
+          
           newLicenses.set(i, {
-            licensee: license[0],
-            tokenId: license[1],
-            royaltyPercentage: license[2],
-            duration: license[3],
-            startDate: license[4],
-            isActive: license[5],
-            commercialUse: license[6],
-            terms: license[7],
+            licensee: license[2], // licensee is at index 2
+            tokenId: license[1], // ipTokenId is at index 1
+            royaltyPercentage: license[6], // revenueShare is at index 6 
+            duration: license[7], // duration is at index 7
+            startDate: license[8], // issueDate is at index 8
+            isActive: license[9], // isActive is at index 9
+            commercialUse: license[3], // commercialUse is at index 3
+            terms: license[10], // terms is at index 10
           });
         } catch (error) {
+          console.log(`Failed to load license ${i}:`, error);
           // License doesn't exist, skip
         }
       }
@@ -827,8 +886,8 @@ export default function App({ thirdwebClient }: AppProps) {
         file_extension: ipFile?.name?.split('.').pop() || 'unknown',
         upload_timestamp: new Date().toISOString(),
         // Blockchain metadata
-        network: 'etherlink',
-        chain_id: '128123',
+        network: 'hedera',
+        chain_id: '296',
         contract_address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
         // Infringement detection metadata
         monitoring_enabled: true,
@@ -882,11 +941,11 @@ export default function App({ thirdwebClient }: AppProps) {
 
       // Show success notification
       notifySuccess('IP Asset Registered', 
-        `Successfully registered IP asset!\nTransaction: ${result.etherlink.txHash}\nIP Asset ID: ${result.etherlink.ipAssetId}`,
+        `Successfully registered IP asset!\nTransaction: ${result.hedera.txHash}\nIP Asset ID: ${result.hedera.ipAssetId}`,
         {
           action: {
             label: 'View Transaction',
-            onClick: () => window.open(`https://testnet.explorer.etherlink.com/tx/${result.etherlink.txHash}`, '_blank')
+            onClick: () => window.open(`https://testnet.hashscan.io/tx/${result.hedera.txHash}`, '_blank')
           }
         }
       );
@@ -950,10 +1009,12 @@ export default function App({ thirdwebClient }: AppProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          tokenId: selectedTokenId,
-          royaltyPercentage: royaltyPercentage,
-          duration: licenseDuration,
+          ipTokenId: selectedTokenId,
           commercialUse: commercialUse,
+          derivativeWorks: derivativesAllowed,
+          exclusive: false, // default to non-exclusive
+          revenueShare: royaltyPercentage * 100, // convert percentage to basis points
+          duration: licenseDuration,
           terms: licenseTerms.terms,
           modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"]
         })
@@ -973,7 +1034,7 @@ export default function App({ thirdwebClient }: AppProps) {
         {
           action: {
             label: 'View Transaction',
-            onClick: () => window.open(`https://testnet.explorer.etherlink.com/tx/${result.data.txHash}`, '_blank')
+            onClick: () => window.open(`https://testnet.hashscan.io/tx/${result.data.txHash}`, '_blank')
           }
         }
       );
@@ -1043,7 +1104,7 @@ export default function App({ thirdwebClient }: AppProps) {
         });
 
       // Show success notification
-      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} XTZ in revenue!`);
+      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} HBAR in revenue!`);
 
       // Reset form
       setPaymentAmount("");
