@@ -1,10 +1,10 @@
-# Etherlink IP Management Backend
+# Hedera IP Management Backend
 
-This backend service provides IP (Intellectual Property) management functionality on the Etherlink testnet using the ModredIP smart contract.
+This backend service provides IP (Intellectual Property) management functionality on the Hedera testnet using the ModredIP smart contract.
 
 ## Features
 
-- **IP Registration**: Register IP assets on Etherlink testnet using ModredIP contract
+- **IP Registration**: Register IP assets on Hedera testnet using ModredIP contract
 - **License Minting**: Mint licenses for IP assets with customizable terms
 - **IPFS Integration**: Upload metadata to IPFS for decentralized storage
 - **Yakoa Integration**: Submit registered IPs to Yakoa for monitoring
@@ -15,7 +15,7 @@ Create a `.env` file in the backend directory:
 
 ```env
 WALLET_PRIVATE_KEY=your_private_key_here
-RPC_PROVIDER_URL=https://node.ghostnet.etherlink.com
+RPC_PROVIDER_URL=https://testnet.hashio.io/api
 NFT_CONTRACT_ADDRESS=optional_nft_contract_address
 ```
 
@@ -61,11 +61,11 @@ NFT_CONTRACT_ADDRESS=optional_nft_contract_address
 
 ## Network Configuration
 
-- **Network**: Etherlink Testnet
-- **Chain ID**: 128123
-- **RPC URL**: https://node.ghostnet.etherlink.com
-- **Explorer**: https://testnet.explorer.etherlink.com
-- **Native Token**: XTZ (used as WIP_TOKEN_ADDRESS)
+- **Network**: Hedera Testnet
+- **Chain ID**: 296
+- **RPC URL**: https://testnet.hashio.io/api
+- **Explorer**: https://testnet.hashscan.io
+- **Native Token**: HBAR (used as WIP_TOKEN_ADDRESS)
 
 ## Smart Contracts
 
@@ -90,7 +90,7 @@ The server will start on port 5000 by default.
 
 ## Key Changes from Story Protocol
 
-1. **Network**: Migrated from Story Protocol networks to Etherlink testnet
-2. **Token**: Using native XTZ token instead of WIP tokens
+1. **Network**: Migrated from Story Protocol networks to Hedera testnet
+2. **Token**: Using native HBAR token instead of WIP tokens
 3. **Contracts**: Using ModredIP contract instead of Story Protocol contracts
-4. **API**: Updated endpoints to work with Etherlink-specific functionality 
+4. **API**: Updated endpoints to work with Hedera-specific functionality 

@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Etherlink](https://img.shields.io/badge/Etherlink-000000?style=flat&logo=ethereum&logoColor=white)](https://etherlink.com/)
+[![Hedera](https://img.shields.io/badge/Hedera-000000?style=flat&logo=ethereum&logoColor=white)](https://hedera.com/)
 
 ---
 
@@ -73,18 +73,18 @@ ModredIP addresses critical pain points in the current IP management landscape:
 ### Backend
 - **Runtime**: Node.js + TypeScript
 - **Framework**: Express.js
-- **Blockchain**: Viem for Etherlink integration
+- **Blockchain**: Viem for Hedera integration
 - **Storage**: IPFS (Pinata) for decentralized storage
 - **AI Integration**: Yakoa for infringement detection
 
 ### Smart Contracts
-- **Platform**: Solidity on Etherlink (Tezos EVM L2)
+- **Platform**: Solidity on Hedera (EVM-compatible)
 - **Core**: ERC-6551 token-bound accounts
 - **Registry**: ERC6551Registry for account management
 - **Account**: ERC6551Account for programmable logic
 
 ### Infrastructure
-- **Blockchain**: Etherlink Testnet (Chain ID: 128123)
+- **Blockchain**: Hedera Testnet (Chain ID: 296)
 - **Storage**: IPFS for censorship-resistant content
 - **Monitoring**: Yakoa API for infringement detection
 - **Deployment**: Hardhat Ignition for contract deployment
@@ -337,7 +337,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Etherlink Team**: For blockchain infrastructure support
+- **Hedera Team**: For blockchain infrastructure support
 - **Yakoa Team**: For AI-powered infringement detection
 - **IPFS Team**: For decentralized storage solutions
 - **Open Source Community**: For invaluable contributions

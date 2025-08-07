@@ -5,7 +5,7 @@ import { uploadJSONToIPFS } from '../utils/functions/uploadToIpfs';
 import { createHash } from 'crypto';
 import { Address } from 'viem';
 
-// IP Metadata interface for Etherlink
+// IP Metadata interface for Hedera
 export interface IpMetadata {
     name: string;
     description: string;
@@ -92,7 +92,7 @@ const MODRED_IP_ABI = [
     }
 ] as const;
 
-export const registerIpWithEtherlink = async (
+export const registerIpWithHedera = async (
     ipHash: string,
     metadata: string,
     isEncrypted: boolean,
@@ -145,12 +145,12 @@ export const registerIpWithEtherlink = async (
             explorerUrl: `${BLOCK_EXPLORER_URL}/tx/${hash}`,
         };
     } catch (error) {
-        console.error('Error registering IP with Etherlink:', error);
+        console.error('Error registering IP with Hedera:', error);
         throw error;
     }
 };
 
-export const mintLicenseOnEtherlink = async (
+export const mintLicenseOnHedera = async (
     tokenId: number,
     royaltyPercentage: number,
     duration: number,
@@ -186,7 +186,7 @@ export const mintLicenseOnEtherlink = async (
             explorerUrl: `${BLOCK_EXPLORER_URL}/tx/${hash}`,
   };
     } catch (error) {
-        console.error('Error minting license on Etherlink:', error);
+        console.error('Error minting license on Hedera:', error);
         throw error;
     }
 };

@@ -7,7 +7,6 @@ import { IPPortfolio } from "./components/IPPortfolio";
 import "./components/IPPortfolio.css";
 
 import {
-  defineChain,
   getContract,
   prepareContractCall,
   readContract,
@@ -18,7 +17,22 @@ import {
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { createWallet, inAppWallet } from "thirdweb/wallets";
 import { parseEther, formatEther } from "viem";
-import { etherlinkTestnet } from "viem/chains";
+
+// Define Hedera testnet chain for thirdweb
+const hederaTestnet = {
+  id: 296,
+  name: 'Hedera Testnet',
+  nativeCurrency: {
+    name: 'HBAR',
+    symbol: 'HBAR',
+    decimals: 18,
+  },
+  rpc: 'https://testnet.hashio.io/api',
+  blockExplorers: [{
+    name: 'Hedera Testnet Explorer',
+    url: 'https://testnet.hashscan.io',
+  }],
+};
 import CONTRACT_ADDRESS_JSON from "./deployed_addresses.json";
 
 // Backend API configuration
@@ -649,7 +663,7 @@ export default function App({ thirdwebClient }: AppProps) {
       const contract = getContract({
         abi: MODRED_IP_ABI,
           client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
+          chain: hederaTestnet,
         address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
       });
 
@@ -1001,12 +1015,12 @@ export default function App({ thirdwebClient }: AppProps) {
 
     try {
       setLoading(true);
-      notifyInfo('Processing Payment', `Paying ${paymentAmount} XTZ in revenue...`);
+      notifyInfo('Processing Payment', `Paying ${paymentAmount} HBAR in revenue...`);
 
         const contract = getContract({
         abi: MODRED_IP_ABI,
           client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
+          chain: hederaTestnet,
         address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
         });
 
@@ -1024,7 +1038,7 @@ export default function App({ thirdwebClient }: AppProps) {
 
       await waitForReceipt({
           client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
+          chain: hederaTestnet,
           transactionHash: transaction.transactionHash,
         });
 
@@ -1060,7 +1074,7 @@ export default function App({ thirdwebClient }: AppProps) {
         const contract = getContract({
         abi: MODRED_IP_ABI,
           client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
+          chain: hederaTestnet,
         address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
         });
 
@@ -1077,7 +1091,7 @@ export default function App({ thirdwebClient }: AppProps) {
 
       await waitForReceipt({
         client: thirdwebClient,
-        chain: defineChain(etherlinkTestnet.id),
+        chain: hederaTestnet,
         transactionHash: transaction.transactionHash,
       });
 
@@ -1117,7 +1131,7 @@ export default function App({ thirdwebClient }: AppProps) {
             <ConnectButton
               client={thirdwebClient}
               wallets={wallets}
-              chain={defineChain(etherlinkTestnet.id)}
+              chain={hederaTestnet}
             />
           </div>
         </div>

@@ -1,182 +1,134 @@
-import { Request, Response } from 'express';
-import { registerIpWithEtherlink } from '../services/storyService';
+import { registerIpWithHedera } from '../services/storyService';
 import { registerToYakoa } from '../services/yakoascanner';
-import { Address } from 'viem';
 import { convertBigIntsToStrings } from '../utils/bigIntSerializer';
+import { Address } from 'viem';
 
-const handleRegistration = async (req: Request, res: Response) => {
-  console.log("🔥 Entered handleRegistration");
+interface RegisterRequest {
+  ipHash: string;
+  metadata: string;
+  isEncrypted: boolean;
+  modredIpContractAddress: Address;
+}
+
+export const registerIP = async (req: any, res: any) => {
   try {
     const { ipHash, metadata, isEncrypted, modredIpContractAddress } = req.body;
-    console.log("📦 Received body:", req.body);
 
-    // Validate required parameters
-    if (!ipHash || !metadata || isEncrypted === undefined || !modredIpContractAddress) {
-      return res.status(400).json({
-        error: 'Missing required parameters: ipHash, metadata, isEncrypted, modredIpContractAddress'
-      });
-    }
+    console.log('Registering IP with hash:', ipHash);
+    console.log('Metadata:', metadata);
+    console.log('Is encrypted:', isEncrypted);
+    console.log('Contract address:', modredIpContractAddress);
 
-    // 1. Register on Etherlink using ModredIP contract
+    // 1. Register on Hedera using ModredIP contract
     const {
       txHash,
       ipAssetId,
       blockNumber,
       explorerUrl
-    } = await registerIpWithEtherlink(ipHash, metadata, isEncrypted, modredIpContractAddress as Address);
-    console.log("✅ Etherlink registration successful:", {
+    } = await registerIpWithHedera(ipHash, metadata, isEncrypted, modredIpContractAddress as Address);
+    console.log("✅ Hedera registration successful:", {
       txHash,
       ipAssetId,
       blockNumber,
       explorerUrl
     });
 
-    // 2. Submit to Yakoa (if ipAssetId is available)
-    if (ipAssetId) {
-      // Ensure contract address is properly formatted
-      const contractAddress = modredIpContractAddress.toLowerCase();
-      
-      // Format ID as contract address with token ID: 0x[contract_address]:[token_id]
-      // Use base ID format for Yakoa API compatibility
-      const Id = `${contractAddress.toLowerCase()}:${ipAssetId}`;
-      console.log("📞 Calling registerToYakoa...");
-      console.log("🔍 Yakoa ID format:", Id);
-      console.log("🔍 Contract address:", contractAddress);
-      console.log("🔍 IP Asset ID:", ipAssetId);
+    // 2. Register with Yakoa for infringement monitoring
+    let yakoaResult = null;
+    let yakoaError = null;
 
-      // Parse metadata to get creator and title info
-      let parsedMetadata;
+    try {
+      // Extract hash from IPFS URL if needed
+      const extractHash = (ipfsUrl: string): string => {
+        if (ipfsUrl.startsWith('ipfs://')) {
+          return ipfsUrl.replace('ipfs://', '');
+        }
+        if (ipfsUrl.includes('/ipfs/')) {
+          const parts = ipfsUrl.split('/ipfs/');
+          return parts[1]?.split('?')[0] || ipfsUrl;
+        }
+        return ipfsUrl;
+      };
+
+      const extractedHash = extractHash(ipHash);
+      
+      // Parse metadata to get creator address
+      let creatorAddress = '0x0000000000000000000000000000000000000000';
       try {
-        parsedMetadata = JSON.parse(metadata);
+        const metadataObj = JSON.parse(metadata);
+        if (metadataObj.creator) {
+          creatorAddress = metadataObj.creator;
+        }
       } catch (e) {
-        parsedMetadata = { name: 'Unknown', description: '', creator: 'unknown' };
+        console.warn('Could not parse metadata for creator address');
       }
 
-      // Ensure creator_id is a valid Ethereum address
-      let creatorId = parsedMetadata.creator;
-      console.log("🔍 Parsed metadata creator:", creatorId);
-      
-      if (!creatorId || !creatorId.match(/^0x[a-fA-F0-9]{40}$/)) {
-        console.log("⚠️ Invalid creator address, using default");
-        // Use a default address if creator is not a valid Ethereum address
-        creatorId = '0x0000000000000000000000000000000000000000';
-      }
-      
-      // Ensure creator address is lowercase for consistency
-      creatorId = creatorId.toLowerCase();
-      console.log("✅ Final creator_id for Yakoa:", creatorId);
-
-      // Extract hash from ipfs:// format for Yakoa API
-      const extractHash = (ipfsHash: string): string => {
-        if (ipfsHash.startsWith('ipfs://')) {
-          return ipfsHash.replace('ipfs://', '');
-        }
-        return ipfsHash;
-      };
-
-      // Prepare comprehensive metadata for Yakoa
-      const yakoaMetadata = {
-        title: parsedMetadata.name || 'Unknown',
-        description: parsedMetadata.description || '',
-        creator: creatorId,
-        created_at: parsedMetadata.created_at || new Date().toISOString(),
-        ip_hash: extractHash(ipHash), // Use extracted hash
-        is_encrypted: isEncrypted,
-        contract_address: contractAddress,
-        token_id: ipAssetId.toString(),
-        // Add additional metadata for better infringement detection
-        content_type: parsedMetadata.content_type || 'unknown',
-        file_size: parsedMetadata.file_size || 0,
-        mime_type: parsedMetadata.mime_type || 'unknown',
-        tags: parsedMetadata.tags || [],
-        category: parsedMetadata.category || 'general',
-        license_type: parsedMetadata.license_type || 'all_rights_reserved',
-        commercial_use: parsedMetadata.commercial_use || false,
-        derivatives_allowed: parsedMetadata.derivatives_allowed || false,
-      };
-
-      // Prepare media array with more detailed information
-      const yakoaMedia = [
-        {
-          media_id: parsedMetadata.name || 'Unknown',
-          url: `https://ipfs.io/ipfs/${extractHash(ipHash)}`, // Use extracted hash for URL
-          type: parsedMetadata.mime_type || 'unknown',
-          size: parsedMetadata.file_size || 0,
-          // Removed hash field as it's not required by Yakoa API
-          metadata: {
-            name: parsedMetadata.name || 'Unknown',
-            description: parsedMetadata.description || '',
-            creator: creatorId,
-            created_at: parsedMetadata.created_at || new Date().toISOString(),
-          }
+      // Create Yakoa payload
+      const yakoaPayload = {
+        Id: `${modredIpContractAddress.toLowerCase()}:${ipAssetId}`,
+        transactionHash: txHash as `0x${string}`,
+        blockNumber,
+        creatorId: creatorAddress.toLowerCase(),
+        metadata: {
+          ip_hash: extractedHash,
+          blockchain: 'hedera',
+          contract_address: modredIpContractAddress.toLowerCase(),
+          token_id: ipAssetId?.toString() || '0'
         },
-      ];
-
-      // Prepare authorizations for infringement monitoring
-      const authorizations = [
-        {
-          brand_id: null,
-          brand_name: null,
-          data: {
-            type: 'email' as const,
-            email_address: parsedMetadata.creator_email || 'creator@modredip.com'
+        media: [
+          {
+            media_id: `IP Asset ${ipAssetId}`,
+            url: `https://ipfs.io/ipfs/${extractedHash}`
           }
-        }
-      ];
-
-const yakoaResponse = await registerToYakoa({
-  Id: Id,
-  transactionHash: txHash as `0x${string}`,
-  blockNumber,
-        creatorId: creatorId,
-        metadata: yakoaMetadata,
-        media: yakoaMedia,
-        brandId: null,
-        brandName: null,
-        emailAddress: parsedMetadata.creator_email || 'creator@modredip.com',
-        licenseParents: [],
-        authorizations: authorizations,
-});
-
-      // Determine success message based on Yakoa response
-      const successMessage = yakoaResponse.alreadyRegistered 
-        ? 'IP Asset registered on Etherlink, already exists in Yakoa'
-        : 'IP Asset successfully registered on Etherlink and Yakoa';
-
-      const responseData = {
-        message: successMessage,
-        etherlink: {
-        txHash,
-          ipAssetId,
-        explorerUrl,
-          blockNumber,
-          ipHash
-      },
-      yakoa: yakoaResponse,
+        ]
       };
 
-      return res.status(200).json(convertBigIntsToStrings(responseData));
-    } else {
-      const responseData = {
-        message: 'Registration successful (IP Asset ID not extracted)',
-        etherlink: {
-          txHash,
-          ipAssetId: null,
-          explorerUrl,
-          blockNumber,
-          ipHash
-        },
-      };
-
-      return res.status(200).json(convertBigIntsToStrings(responseData));
+      yakoaResult = await registerToYakoa(yakoaPayload);
+      console.log("✅ Yakoa registration successful:", yakoaResult);
+    } catch (error) {
+      yakoaError = error;
+      console.error("❌ Yakoa registration failed:", error);
     }
-  } catch (err) {
-    console.error('❌ Registration error:', err);
-    return res.status(500).json({
-      error: 'Registration failed',
-      details: err instanceof Error ? err.message : err,
-    });
+
+    // 3. Prepare response
+    const successMessage = yakoaResult 
+      ? 'IP Asset successfully registered on Hedera and Yakoa'
+      : 'IP Asset registered on Hedera, already exists in Yakoa';
+
+    const response = {
+      success: true,
+      message: successMessage,
+      data: {
+        hedera: {
+          txHash,
+          ipAssetId,
+          blockNumber,
+          explorerUrl,
+          network: 'Hedera Testnet'
+        },
+                 yakoa: yakoaResult ? {
+           id: yakoaResult.id,
+           status: 'registered'
+         } : {
+           status: 'already_exists',
+           error: yakoaError instanceof Error ? yakoaError.message : 'Unknown error'
+         }
+      }
+    };
+
+    // Convert BigInt values to strings for JSON serialization
+    const serializedResponse = convertBigIntsToStrings(response);
+    
+    res.status(200).json(serializedResponse);
+  } catch (error) {
+    console.error('Error in registerIP:', error);
+    
+    const errorResponse = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      message: 'Failed to register IP asset'
+    };
+    
+    res.status(500).json(errorResponse);
   }
 };
-
-export default handleRegistration;

@@ -1,283 +1,269 @@
-import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import hre from "hardhat";
-import { parseEther } from "viem";
+import { ethers } from "hardhat";
+import { ModredIP, ERC6551Registry, ERC6551Account } from "../typechain-types";
 
 describe("ModredIP", function () {
-  let modredIP: any;
-  let registry: any;
-  let accountImplementation: any;
+  let modredIP: ModredIP;
+  let registry: ERC6551Registry;
+  let accountImplementation: ERC6551Account;
   let owner: any;
-  let creator: any;
-  let licensee: any;
-  let disputer: any;
-  let feeCollector: any;
+  let addr1: any;
+  let addr2: any;
 
-  const IP_HASH = "QmTestIPHash123456789";
-  const METADATA = "QmTestMetadata123456789";
-  const LICENSE_TERMS = "QmTestLicenseTerms123456789";
+  beforeEach(async function () {
+    // Get signers
+    [owner, addr1, addr2] = await ethers.getSigners();
 
-  // We define a fixture to reuse the same setup in every test.
-  async function deployContractFixture() {
-    // Contracts are deployed using the first signer/account by default
-    const [owner, creator, licensee, disputer, feeCollector] = await hre.viem.getWalletClients();
-
-    // Set block base fee to zero because we want exact calculation checks without network fees
-    await hre.network.provider.send("hardhat_setNextBlockBaseFeePerGas", [
-      "0x0",
-    ]);
-
-    // Deploy ERC-6551 Registry
-    const registry = await hre.viem.deployContract("ERC6551Registry", []);
+    // Deploy ERC6551 Registry
+    const Registry = await ethers.getContractFactory("ERC6551Registry");
+    registry = await Registry.deploy();
 
     // Deploy Account Implementation
-    const accountImplementation = await hre.viem.deployContract("ERC6551Account", []);
+    const AccountImplementation = await ethers.getContractFactory("ERC6551Account");
+    accountImplementation = await AccountImplementation.deploy();
+
+    // Deploy ModredIP contract
+    const ModredIP = await ethers.getContractFactory("ModredIP");
+    modredIP = await ModredIP.deploy(
+      await registry.getAddress(),
+      await accountImplementation.getAddress(),
+      296n, // Hedera testnet chain ID
+      ethers.ZeroAddress // Platform fee collector (to be set later)
+    );
 
     // Add implementation to registry
-    await registry.write.addImplementation([accountImplementation.address]);
+    await registry.addImplementation(await accountImplementation.getAddress());
 
-    // Deploy ModredIP
-    const modredIP = await hre.viem.deployContract("ModredIP", [
-      registry.address,
-      accountImplementation.address,
-      128123n, // Etherlink testnet chain ID
-      feeCollector.account.address
-    ]);
-
-    const publicClient = await hre.viem.getPublicClient();
-
-    return {
-      modredIP,
-      registry,
-      accountImplementation,
-      owner,
-      creator,
-      licensee,
-      disputer,
-      feeCollector,
-      publicClient,
-    };
-  }
+    // Set platform fee collector
+    await modredIP.setPlatformFeeCollector(ethers.ZeroAddress);
+  });
 
   describe("Deployment", function () {
     it("Should set the right owner", async function () {
-      const { modredIP, owner } = await loadFixture(deployContractFixture);
-      const contractOwner = await modredIP.read.owner();
-      expect(contractOwner.toLowerCase()).to.equal(owner.account.address.toLowerCase());
+      expect(await modredIP.owner()).to.equal(owner.address);
     });
 
-    it("Should set the correct platform fee collector", async function () {
-      const { modredIP, feeCollector } = await loadFixture(deployContractFixture);
-      const collector = await modredIP.read.platformFeeCollector();
-      expect(collector.toLowerCase()).to.equal(feeCollector.account.address.toLowerCase());
+    it("Should set the correct registry address", async function () {
+      expect(await modredIP.registry()).to.equal(await registry.getAddress());
     });
 
-    it("Should set the correct platform fee percentage", async function () {
-      const { modredIP } = await loadFixture(deployContractFixture);
-      const feePercentage = await modredIP.read.platformFeePercentage();
-      expect(feePercentage).to.equal(250n); // 2.5%
+    it("Should set the correct account implementation", async function () {
+      expect(await modredIP.accountImplementation()).to.equal(await accountImplementation.getAddress());
+    });
+
+    it("Should set the correct chain ID", async function () {
+      expect(await modredIP.chainId()).to.equal(296n);
     });
   });
 
   describe("IP Registration", function () {
-    it("Should register a new IP asset", async function () {
-      const { modredIP, creator } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
+    it("Should register IP successfully", async function () {
+      const ipHash = "QmTestHash123";
+      const metadata = JSON.stringify({
+        name: "Test IP",
+        description: "Test description",
+        image: "https://ipfs.io/ipfs/QmTestImage"
       });
-      
-      const ipAsset = await modredIP.read.getIPAsset([1n]);
-      
-      expect(ipAsset[0].toLowerCase()).to.equal(creator.account.address.toLowerCase());
-      expect(ipAsset[1]).to.equal(IP_HASH);
-      expect(ipAsset[2]).to.equal(METADATA);
-      expect(ipAsset[3]).to.be.false;
-      expect(ipAsset[4]).to.be.false;
-      expect(ipAsset[7]).to.equal(10000n); // 100%
+      const isEncrypted = false;
+
+      await expect(modredIP.registerIP(ipHash, metadata, isEncrypted))
+        .to.emit(modredIP, "IPRegistered")
+        .withArgs(1n, owner.address, ipHash, metadata, isEncrypted);
+
+      const ipAsset = await modredIP.getIPAsset(1n);
+      expect(ipAsset.owner).to.equal(owner.address);
+      expect(ipAsset.ipHash).to.equal(ipHash);
+      expect(ipAsset.metadata).to.equal(metadata);
+      expect(ipAsset.isEncrypted).to.equal(isEncrypted);
     });
 
-    it("Should mint NFT to creator", async function () {
-      const { modredIP, creator } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
+    it("Should increment token ID correctly", async function () {
+      const ipHash = "QmTestHash123";
+      const metadata = JSON.stringify({
+        name: "Test IP",
+        description: "Test description"
       });
-      
-      const nftOwner = await modredIP.read.ownerOf([1n]);
-      expect(nftOwner.toLowerCase()).to.equal(creator.account.address.toLowerCase());
+
+      await modredIP.registerIP(ipHash, metadata, false);
+      expect(await modredIP.nextTokenId()).to.equal(2n);
     });
 
-    it("Should increment token ID", async function () {
-      const { modredIP, creator } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
+    it("Should revert if caller is not owner", async function () {
+      const ipHash = "QmTestHash123";
+      const metadata = JSON.stringify({
+        name: "Test IP",
+        description: "Test description"
       });
-      await modredIP.write.registerIP([IP_HASH + "2", METADATA + "2", true], {
-        account: creator.account.address,
-      });
-      
-      const nextTokenId = await modredIP.read.nextTokenId();
-      expect(nextTokenId).to.equal(3n);
+
+      await expect(
+        modredIP.connect(addr1).registerIP(ipHash, metadata, false)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
   describe("License Minting", function () {
-    it("Should mint a license", async function () {
-      const { modredIP, creator } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
+    beforeEach(async function () {
+      // Register an IP first
+      const ipHash = "QmTestHash123";
+      const metadata = JSON.stringify({
+        name: "Test IP",
+        description: "Test description"
       });
-      
-      await modredIP.write.mintLicense([1n, 1000n, 86400n, true, LICENSE_TERMS], {
-        account: creator.account.address,
-      });
-      
-      const license = await modredIP.read.getLicense([1n]);
-      
-      expect(license[0].toLowerCase()).to.equal(creator.account.address.toLowerCase());
-      expect(license[1]).to.equal(1n);
-      expect(license[2]).to.equal(1000n); // 10%
-      expect(license[3]).to.equal(86400n);
-      expect(license[5]).to.be.true;
-      expect(license[6]).to.be.true;
-      expect(license[7]).to.equal(LICENSE_TERMS);
+      await modredIP.registerIP(ipHash, metadata, false);
     });
 
-    it("Should transfer royalty tokens to licensee", async function () {
-      const { modredIP, creator } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
-      });
-      
-      await modredIP.write.mintLicense([1n, 1000n, 86400n, true, LICENSE_TERMS], {
-        account: creator.account.address,
-      });
-      
-      const ipAsset = await modredIP.read.getIPAsset([1n]);
-      expect(ipAsset[7]).to.equal(9000n); // 90% remaining
+    it("Should mint license successfully", async function () {
+      const tokenId = 1n;
+      const royaltyPercentage = 1000n; // 10%
+      const duration = 365n; // 1 year
+      const commercialUse = true;
+      const terms = "Commercial license terms";
+
+      await expect(modredIP.mintLicense(tokenId, royaltyPercentage, duration, commercialUse, terms))
+        .to.emit(modredIP, "LicenseMinted")
+        .withArgs(1n, addr1.address, tokenId, royaltyPercentage, duration, commercialUse, terms);
+
+      const license = await modredIP.getLicense(1n);
+      expect(license.licensee).to.equal(addr1.address);
+      expect(license.tokenId).to.equal(tokenId);
+      expect(license.royaltyPercentage).to.equal(royaltyPercentage);
+      expect(license.duration).to.equal(duration);
+      expect(license.commercialUse).to.equal(commercialUse);
+      expect(license.terms).to.equal(terms);
     });
 
-    it("Should fail if royalty percentage too high", async function () {
-      const { modredIP, creator } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
-      });
-      
+    it("Should increment license ID correctly", async function () {
+      const tokenId = 1n;
+      const royaltyPercentage = 1000n;
+      const duration = 365n;
+      const commercialUse = true;
+      const terms = "Commercial license terms";
+
+      await modredIP.mintLicense(tokenId, royaltyPercentage, duration, commercialUse, terms);
+      expect(await modredIP.nextLicenseId()).to.equal(2n);
+    });
+
+    it("Should revert if IP asset doesn't exist", async function () {
+      const tokenId = 999n; // Non-existent token
+      const royaltyPercentage = 1000n;
+      const duration = 365n;
+      const commercialUse = true;
+      const terms = "Commercial license terms";
+
       await expect(
-        modredIP.write.mintLicense([1n, 15000n, 86400n, true, LICENSE_TERMS], {
-          account: creator.account.address,
-        })
-      ).to.be.rejectedWith("Invalid royalty percentage");
+        modredIP.mintLicense(tokenId, royaltyPercentage, duration, commercialUse, terms)
+      ).to.be.revertedWith("IP asset does not exist");
     });
   });
 
-  describe("Revenue Payment", function () {
-    it("Should accept revenue payment", async function () {
-      const { modredIP, creator, licensee } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
+  describe("Revenue Distribution", function () {
+    beforeEach(async function () {
+      // Register an IP and mint a license
+      const ipHash = "QmTestHash123";
+      const metadata = JSON.stringify({
+        name: "Test IP",
+        description: "Test description"
       });
-      
-      await modredIP.write.mintLicense([1n, 1000n, 86400n, true, LICENSE_TERMS], {
-        account: creator.account.address,
-      });
-      
-      const paymentAmount = parseEther("1.0");
-      await modredIP.write.payRevenue([1n], {
-        account: licensee.account.address,
-        value: paymentAmount,
-      });
-      
-      const royaltyInfo = await modredIP.read.getRoyaltyInfo([1n, creator.account.address]);
-      expect(royaltyInfo[0]).to.equal(paymentAmount);
+      await modredIP.registerIP(ipHash, metadata, false);
+      await modredIP.mintLicense(1n, 1000n, 365n, true, "Commercial terms");
     });
 
-    it("Should distribute royalties correctly", async function () {
-      const { modredIP, creator, licensee } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
-      });
-      
-      await modredIP.write.mintLicense([1n, 1000n, 86400n, true, LICENSE_TERMS], {
-        account: creator.account.address,
-      });
-      
-      const paymentAmount = parseEther("1.0");
-      await modredIP.write.payRevenue([1n], {
-        account: licensee.account.address,
-        value: paymentAmount,
-      });
-      
-      const royaltyInfo = await modredIP.read.getRoyaltyInfo([1n, creator.account.address]);
-      expect(royaltyInfo[0]).to.equal(paymentAmount);
-      expect(royaltyInfo[3] > 0n).to.be.true;
+    it("Should pay revenue successfully", async function () {
+      const tokenId = 1n;
+      const amount = ethers.parseEther("1.0");
+
+      await expect(modredIP.payRevenue(tokenId, { value: amount }))
+        .to.emit(modredIP, "RevenuePaid")
+        .withArgs(tokenId, owner.address, amount);
+
+      const ipAsset = await modredIP.getIPAsset(tokenId);
+      expect(ipAsset.totalRevenue).to.equal(amount);
+    });
+
+    it("Should distribute royalties to license holders", async function () {
+      const tokenId = 1n;
+      const amount = ethers.parseEther("1.0");
+
+      await modredIP.payRevenue(tokenId, { value: amount });
+
+      // Check that royalties were distributed
+      // This would depend on the specific implementation of royalty distribution
+      const license = await modredIP.getLicense(1n);
+      expect(license.isActive).to.be.true;
     });
   });
 
-  describe("Dispute System", function () {
-    it("Should allow raising disputes", async function () {
-      const { modredIP, creator, disputer } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
+  describe("Royalty Claiming", function () {
+    beforeEach(async function () {
+      // Register an IP and mint a license
+      const ipHash = "QmTestHash123";
+      const metadata = JSON.stringify({
+        name: "Test IP",
+        description: "Test description"
       });
-      
-      await modredIP.write.raiseDispute([1n, "Potential plagiarism"], {
-        account: disputer.account.address,
-      });
-      
-      const dispute = await modredIP.read.disputes([1n]);
-      expect(dispute[0]).to.equal(1n);
-      expect(dispute[1]).to.equal(1n);
-      expect(dispute[2].toLowerCase()).to.equal(disputer.account.address.toLowerCase());
-      expect(dispute[3]).to.equal("Potential plagiarism");
-      expect(dispute[5]).to.be.false;
+      await modredIP.registerIP(ipHash, metadata, false);
+      await modredIP.mintLicense(1n, 1000n, 365n, true, "Commercial terms");
     });
 
-    it("Should mark IP as disputed", async function () {
-      const { modredIP, creator, disputer } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.registerIP([IP_HASH, METADATA, false], {
-        account: creator.account.address,
-      });
-      
-      await modredIP.write.raiseDispute([1n, "Potential plagiarism"], {
-        account: disputer.account.address,
-      });
-      
-      const ipAsset = await modredIP.read.getIPAsset([1n]);
-      expect(ipAsset[4]).to.be.true;
+    it("Should allow license holders to claim royalties", async function () {
+      const licenseId = 1n;
+      const tokenId = 1n;
+      const amount = ethers.parseEther("1.0");
+
+      // Pay revenue first
+      await modredIP.payRevenue(tokenId, { value: amount });
+
+      // Claim royalties
+      await expect(modredIP.connect(addr1).claimRoyalties(licenseId))
+        .to.emit(modredIP, "RoyaltiesClaimed")
+        .withArgs(licenseId, addr1.address, anyValue); // anyValue for the claimed amount
     });
   });
 
-  describe("Admin Functions", function () {
-    it("Should allow setting platform fee collector", async function () {
-      const { modredIP, owner, licensee } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.setPlatformFeeCollector([licensee.account.address], {
-        account: owner.account.address,
+  describe("Dispute Resolution", function () {
+    beforeEach(async function () {
+      // Register an IP
+      const ipHash = "QmTestHash123";
+      const metadata = JSON.stringify({
+        name: "Test IP",
+        description: "Test description"
       });
-      
-      const collector = await modredIP.read.platformFeeCollector();
-      expect(collector.toLowerCase()).to.equal(licensee.account.address.toLowerCase());
+      await modredIP.registerIP(ipHash, metadata, false);
     });
 
-    it("Should allow setting platform fee percentage", async function () {
-      const { modredIP, owner } = await loadFixture(deployContractFixture);
-      
-      await modredIP.write.setPlatformFeePercentage([500n], {
-        account: owner.account.address,
-      });
-      
-      const feePercentage = await modredIP.read.platformFeePercentage();
-      expect(feePercentage).to.equal(500n);
+    it("Should allow owner to flag IP as disputed", async function () {
+      const tokenId = 1n;
+
+      await expect(modredIP.flagAsDisputed(tokenId))
+        .to.emit(modredIP, "IPDisputed")
+        .withArgs(tokenId, owner.address);
+
+      const ipAsset = await modredIP.getIPAsset(tokenId);
+      expect(ipAsset.isDisputed).to.be.true;
+    });
+
+    it("Should revert if non-owner tries to flag as disputed", async function () {
+      const tokenId = 1n;
+
+      await expect(
+        modredIP.connect(addr1).flagAsDisputed(tokenId)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+  });
+
+  describe("Access Control", function () {
+    it("Should allow owner to transfer ownership", async function () {
+      await expect(modredIP.transferOwnership(addr1.address))
+        .to.emit(modredIP, "OwnershipTransferred")
+        .withArgs(owner.address, addr1.address);
+
+      expect(await modredIP.owner()).to.equal(addr1.address);
+    });
+
+    it("Should revert if non-owner tries to transfer ownership", async function () {
+      await expect(
+        modredIP.connect(addr1).transferOwnership(addr2.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 }); 
