@@ -23,53 +23,168 @@ import type {
   TypedContractMethod,
 } from "./common";
 
+export declare namespace ModredIP {
+  export type DisputeStruct = {
+    disputeId: BigNumberish;
+    ipTokenId: BigNumberish;
+    disputer: AddressLike;
+    reason: string;
+    evidence: string;
+    timestamp: BigNumberish;
+    status: BigNumberish;
+    arbitrator: AddressLike;
+  };
+
+  export type DisputeStructOutput = [
+    disputeId: bigint,
+    ipTokenId: bigint,
+    disputer: string,
+    reason: string,
+    evidence: string,
+    timestamp: bigint,
+    status: bigint,
+    arbitrator: string
+  ] & {
+    disputeId: bigint;
+    ipTokenId: bigint;
+    disputer: string;
+    reason: string;
+    evidence: string;
+    timestamp: bigint;
+    status: bigint;
+    arbitrator: string;
+  };
+
+  export type IPAssetStruct = {
+    tokenId: BigNumberish;
+    owner: AddressLike;
+    ipHash: string;
+    metadata: string;
+    isActive: boolean;
+    isDisputed: boolean;
+    registrationDate: BigNumberish;
+    totalRevenue: BigNumberish;
+    royaltyTokens: BigNumberish;
+    tokenBoundAccount: AddressLike;
+  };
+
+  export type IPAssetStructOutput = [
+    tokenId: bigint,
+    owner: string,
+    ipHash: string,
+    metadata: string,
+    isActive: boolean,
+    isDisputed: boolean,
+    registrationDate: bigint,
+    totalRevenue: bigint,
+    royaltyTokens: bigint,
+    tokenBoundAccount: string
+  ] & {
+    tokenId: bigint;
+    owner: string;
+    ipHash: string;
+    metadata: string;
+    isActive: boolean;
+    isDisputed: boolean;
+    registrationDate: bigint;
+    totalRevenue: bigint;
+    royaltyTokens: bigint;
+    tokenBoundAccount: string;
+  };
+
+  export type LicenseStruct = {
+    licenseId: BigNumberish;
+    ipTokenId: BigNumberish;
+    licensee: AddressLike;
+    commercialUse: boolean;
+    derivativeWorks: boolean;
+    exclusive: boolean;
+    revenueShare: BigNumberish;
+    duration: BigNumberish;
+    issueDate: BigNumberish;
+    isActive: boolean;
+    terms: string;
+  };
+
+  export type LicenseStructOutput = [
+    licenseId: bigint,
+    ipTokenId: bigint,
+    licensee: string,
+    commercialUse: boolean,
+    derivativeWorks: boolean,
+    exclusive: boolean,
+    revenueShare: bigint,
+    duration: bigint,
+    issueDate: bigint,
+    isActive: boolean,
+    terms: string
+  ] & {
+    licenseId: bigint;
+    ipTokenId: bigint;
+    licensee: string;
+    commercialUse: boolean;
+    derivativeWorks: boolean;
+    exclusive: boolean;
+    revenueShare: bigint;
+    duration: bigint;
+    issueDate: bigint;
+    isActive: boolean;
+    terms: string;
+  };
+}
+
 export interface ModredIPInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "DISPUTE_TIMEOUT"
-      | "MINIMUM_LICENSE_DURATION"
-      | "ROYALTY_DECIMALS"
+      | "PLATFORM_FEE"
+      | "ROYALTY_DENOMINATOR"
       | "accountImplementation"
       | "approve"
       | "balanceOf"
-      | "chainId"
       | "claimRoyalties"
       | "disputes"
+      | "erc6551Registry"
       | "getApproved"
-      | "getIPAccount"
+      | "getDispute"
       | "getIPAsset"
+      | "getIPDisputes"
+      | "getIPLicenses"
       | "getLicense"
-      | "getRoyaltyInfo"
+      | "getLicenseeLicenses"
+      | "getOwnerIPs"
+      | "getRoyaltyShare"
       | "ipAssets"
+      | "ipToDisputes"
+      | "ipToLicenses"
       | "isApprovedForAll"
+      | "licenseeToLicenses"
       | "licenses"
       | "mintLicense"
       | "name"
-      | "nextDisputeId"
-      | "nextLicenseId"
-      | "nextTokenId"
       | "owner"
       | "ownerOf"
+      | "ownerToIPs"
       | "payRevenue"
-      | "platformFeeCollector"
-      | "platformFeePercentage"
+      | "ping"
       | "raiseDispute"
       | "registerIP"
-      | "registry"
       | "renounceOwnership"
       | "resolveDispute"
-      | "royaltyVaults"
+      | "royaltyShares"
       | "safeTransferFrom(address,address,uint256)"
       | "safeTransferFrom(address,address,uint256,bytes)"
       | "setApprovalForAll"
-      | "setPlatformFeeCollector"
-      | "setPlatformFeePercentage"
+      | "setIPStatus"
       | "supportsInterface"
       | "symbol"
       | "tokenURI"
+      | "totalDisputes"
+      | "totalIPs"
+      | "totalLicenses"
       | "transferFrom"
-      | "transferIP"
       | "transferOwnership"
+      | "transferRoyaltyShares"
+      | "version"
   ): FunctionFragment;
 
   getEvent(
@@ -80,7 +195,7 @@ export interface ModredIPInterface extends Interface {
       | "DisputeRaised"
       | "DisputeResolved"
       | "IPRegistered"
-      | "IPTransferred"
+      | "IPStatusChanged"
       | "LicenseMinted"
       | "MetadataUpdate"
       | "OwnershipTransferred"
@@ -90,15 +205,11 @@ export interface ModredIPInterface extends Interface {
   ): EventFragment;
 
   encodeFunctionData(
-    functionFragment: "DISPUTE_TIMEOUT",
+    functionFragment: "PLATFORM_FEE",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "MINIMUM_LICENSE_DURATION",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "ROYALTY_DECIMALS",
+    functionFragment: "ROYALTY_DENOMINATOR",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -113,7 +224,6 @@ export interface ModredIPInterface extends Interface {
     functionFragment: "balanceOf",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(functionFragment: "chainId", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "claimRoyalties",
     values: [BigNumberish]
@@ -123,11 +233,15 @@ export interface ModredIPInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "erc6551Registry",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getApproved",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "getIPAccount",
+    functionFragment: "getDispute",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -135,11 +249,27 @@ export interface ModredIPInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "getIPDisputes",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getIPLicenses",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getLicense",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "getRoyaltyInfo",
+    functionFragment: "getLicenseeLicenses",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getOwnerIPs",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getRoyaltyShare",
     values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
@@ -147,8 +277,20 @@ export interface ModredIPInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "ipToDisputes",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "ipToLicenses",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "isApprovedForAll",
     values: [AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "licenseeToLicenses",
+    values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "licenses",
@@ -156,58 +298,50 @@ export interface ModredIPInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "mintLicense",
-    values: [BigNumberish, BigNumberish, BigNumberish, boolean, string]
+    values: [
+      BigNumberish,
+      boolean,
+      boolean,
+      boolean,
+      BigNumberish,
+      BigNumberish,
+      string
+    ]
   ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "nextDisputeId",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "nextLicenseId",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "nextTokenId",
-    values?: undefined
-  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "ownerOf",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "ownerToIPs",
+    values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "payRevenue",
-    values: [BigNumberish]
+    values: [BigNumberish, string]
   ): string;
-  encodeFunctionData(
-    functionFragment: "platformFeeCollector",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "platformFeePercentage",
-    values?: undefined
-  ): string;
+  encodeFunctionData(functionFragment: "ping", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "raiseDispute",
-    values: [BigNumberish, string]
+    values: [BigNumberish, string, string]
   ): string;
   encodeFunctionData(
     functionFragment: "registerIP",
-    values: [string, string, boolean]
+    values: [string, string, string]
   ): string;
-  encodeFunctionData(functionFragment: "registry", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "resolveDispute",
-    values: [BigNumberish, string]
+    values: [BigNumberish, BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "royaltyVaults",
-    values: [BigNumberish]
+    functionFragment: "royaltyShares",
+    values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "safeTransferFrom(address,address,uint256)",
@@ -222,12 +356,8 @@ export interface ModredIPInterface extends Interface {
     values: [AddressLike, boolean]
   ): string;
   encodeFunctionData(
-    functionFragment: "setPlatformFeeCollector",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setPlatformFeePercentage",
-    values: [BigNumberish]
+    functionFragment: "setIPStatus",
+    values: [BigNumberish, boolean]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -239,28 +369,34 @@ export interface ModredIPInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "transferFrom",
-    values: [AddressLike, AddressLike, BigNumberish]
+    functionFragment: "totalDisputes",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "totalIPs", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "totalLicenses",
+    values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "transferIP",
+    functionFragment: "transferFrom",
     values: [AddressLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "transferRoyaltyShares",
+    values: [BigNumberish, AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(functionFragment: "version", values?: undefined): string;
 
   decodeFunctionResult(
-    functionFragment: "DISPUTE_TIMEOUT",
+    functionFragment: "PLATFORM_FEE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "MINIMUM_LICENSE_DURATION",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "ROYALTY_DECIMALS",
+    functionFragment: "ROYALTY_DENOMINATOR",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -269,29 +405,57 @@ export interface ModredIPInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "chainId", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "claimRoyalties",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "disputes", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "erc6551Registry",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getApproved",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "getDispute", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "getIPAsset", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "getIPAccount",
+    functionFragment: "getIPDisputes",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "getIPAsset", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getIPLicenses",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getLicense", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "getRoyaltyInfo",
+    functionFragment: "getLicenseeLicenses",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getOwnerIPs",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getRoyaltyShare",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "ipAssets", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "ipToDisputes",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "ipToLicenses",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "isApprovedForAll",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "licenseeToLicenses",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "licenses", data: BytesLike): Result;
@@ -300,35 +464,16 @@ export interface ModredIPInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "nextDisputeId",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "nextLicenseId",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "nextTokenId",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "ownerOf", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "ownerToIPs", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "payRevenue", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "platformFeeCollector",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "platformFeePercentage",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "ping", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "raiseDispute",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "registerIP", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "registry", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -338,7 +483,7 @@ export interface ModredIPInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "royaltyVaults",
+    functionFragment: "royaltyShares",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -354,11 +499,7 @@ export interface ModredIPInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setPlatformFeeCollector",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "setPlatformFeePercentage",
+    functionFragment: "setIPStatus",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -368,14 +509,27 @@ export interface ModredIPInterface extends Interface {
   decodeFunctionResult(functionFragment: "symbol", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "tokenURI", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "totalDisputes",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "totalIPs", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "totalLicenses",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "transferFrom",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "transferIP", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferRoyaltyShares",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "version", data: BytesLike): Result;
 }
 
 export namespace ApprovalEvent {
@@ -437,21 +591,18 @@ export namespace BatchMetadataUpdateEvent {
 export namespace DisputeRaisedEvent {
   export type InputTuple = [
     disputeId: BigNumberish,
-    tokenId: BigNumberish,
-    disputer: AddressLike,
-    reason: string
+    ipTokenId: BigNumberish,
+    disputer: AddressLike
   ];
   export type OutputTuple = [
     disputeId: bigint,
-    tokenId: bigint,
-    disputer: string,
-    reason: string
+    ipTokenId: bigint,
+    disputer: string
   ];
   export interface OutputObject {
     disputeId: bigint;
-    tokenId: bigint;
+    ipTokenId: bigint;
     disputer: string;
-    reason: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -460,11 +611,11 @@ export namespace DisputeRaisedEvent {
 }
 
 export namespace DisputeResolvedEvent {
-  export type InputTuple = [disputeId: BigNumberish, resolution: string];
-  export type OutputTuple = [disputeId: bigint, resolution: string];
+  export type InputTuple = [disputeId: BigNumberish, status: BigNumberish];
+  export type OutputTuple = [disputeId: bigint, status: bigint];
   export interface OutputObject {
     disputeId: bigint;
-    resolution: string;
+    status: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -477,19 +628,19 @@ export namespace IPRegisteredEvent {
     tokenId: BigNumberish,
     owner: AddressLike,
     ipHash: string,
-    metadata: string
+    tokenBoundAccount: AddressLike
   ];
   export type OutputTuple = [
     tokenId: bigint,
     owner: string,
     ipHash: string,
-    metadata: string
+    tokenBoundAccount: string
   ];
   export interface OutputObject {
     tokenId: bigint;
     owner: string;
     ipHash: string;
-    metadata: string;
+    tokenBoundAccount: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -497,17 +648,21 @@ export namespace IPRegisteredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace IPTransferredEvent {
+export namespace IPStatusChangedEvent {
   export type InputTuple = [
     tokenId: BigNumberish,
-    from: AddressLike,
-    to: AddressLike
+    isActive: boolean,
+    isDisputed: boolean
   ];
-  export type OutputTuple = [tokenId: bigint, from: string, to: string];
+  export type OutputTuple = [
+    tokenId: bigint,
+    isActive: boolean,
+    isDisputed: boolean
+  ];
   export interface OutputObject {
     tokenId: bigint;
-    from: string;
-    to: string;
+    isActive: boolean;
+    isDisputed: boolean;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -518,21 +673,18 @@ export namespace IPTransferredEvent {
 export namespace LicenseMintedEvent {
   export type InputTuple = [
     licenseId: BigNumberish,
-    tokenId: BigNumberish,
-    licensee: AddressLike,
-    royaltyPercentage: BigNumberish
+    ipTokenId: BigNumberish,
+    licensee: AddressLike
   ];
   export type OutputTuple = [
     licenseId: bigint,
-    tokenId: bigint,
-    licensee: string,
-    royaltyPercentage: bigint
+    ipTokenId: bigint,
+    licensee: string
   ];
   export interface OutputObject {
     licenseId: bigint;
-    tokenId: bigint;
+    ipTokenId: bigint;
     licensee: string;
-    royaltyPercentage: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -567,15 +719,22 @@ export namespace OwnershipTransferredEvent {
 
 export namespace RevenuePaidEvent {
   export type InputTuple = [
-    tokenId: BigNumberish,
+    ipTokenId: BigNumberish,
     payer: AddressLike,
-    amount: BigNumberish
+    amount: BigNumberish,
+    description: string
   ];
-  export type OutputTuple = [tokenId: bigint, payer: string, amount: bigint];
+  export type OutputTuple = [
+    ipTokenId: bigint,
+    payer: string,
+    amount: bigint,
+    description: string
+  ];
   export interface OutputObject {
-    tokenId: bigint;
+    ipTokenId: bigint;
     payer: string;
     amount: bigint;
+    description: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -585,13 +744,17 @@ export namespace RevenuePaidEvent {
 
 export namespace RoyaltyClaimedEvent {
   export type InputTuple = [
-    tokenId: BigNumberish,
+    ipTokenId: BigNumberish,
     claimant: AddressLike,
     amount: BigNumberish
   ];
-  export type OutputTuple = [tokenId: bigint, claimant: string, amount: bigint];
+  export type OutputTuple = [
+    ipTokenId: bigint,
+    claimant: string,
+    amount: bigint
+  ];
   export interface OutputObject {
-    tokenId: bigint;
+    ipTokenId: bigint;
     claimant: string;
     amount: bigint;
   }
@@ -662,11 +825,9 @@ export interface ModredIP extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  DISPUTE_TIMEOUT: TypedContractMethod<[], [bigint], "view">;
+  PLATFORM_FEE: TypedContractMethod<[], [bigint], "view">;
 
-  MINIMUM_LICENSE_DURATION: TypedContractMethod<[], [bigint], "view">;
-
-  ROYALTY_DECIMALS: TypedContractMethod<[], [bigint], "view">;
+  ROYALTY_DENOMINATOR: TypedContractMethod<[], [bigint], "view">;
 
   accountImplementation: TypedContractMethod<[], [string], "view">;
 
@@ -678,10 +839,8 @@ export interface ModredIP extends BaseContract {
 
   balanceOf: TypedContractMethod<[owner: AddressLike], [bigint], "view">;
 
-  chainId: TypedContractMethod<[], [bigint], "view">;
-
   claimRoyalties: TypedContractMethod<
-    [tokenId: BigNumberish],
+    [ipTokenId: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -689,68 +848,65 @@ export interface ModredIP extends BaseContract {
   disputes: TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [bigint, bigint, string, string, bigint, boolean, string, string] & {
+      [bigint, bigint, string, string, string, bigint, bigint, string] & {
         disputeId: bigint;
-        tokenId: bigint;
+        ipTokenId: bigint;
         disputer: string;
         reason: string;
+        evidence: string;
         timestamp: bigint;
-        isResolved: boolean;
+        status: bigint;
         arbitrator: string;
-        resolution: string;
       }
     ],
     "view"
   >;
 
+  erc6551Registry: TypedContractMethod<[], [string], "view">;
+
   getApproved: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
-  getIPAccount: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
+  getDispute: TypedContractMethod<
+    [disputeId: BigNumberish],
+    [ModredIP.DisputeStructOutput],
+    "view"
+  >;
 
   getIPAsset: TypedContractMethod<
     [tokenId: BigNumberish],
-    [
-      [string, string, string, boolean, boolean, bigint, bigint, bigint] & {
-        owner: string;
-        ipHash: string;
-        metadata: string;
-        isEncrypted: boolean;
-        isDisputed: boolean;
-        registrationDate: bigint;
-        totalRevenue: bigint;
-        royaltyTokens: bigint;
-      }
-    ],
+    [ModredIP.IPAssetStructOutput],
+    "view"
+  >;
+
+  getIPDisputes: TypedContractMethod<
+    [ipTokenId: BigNumberish],
+    [bigint[]],
+    "view"
+  >;
+
+  getIPLicenses: TypedContractMethod<
+    [ipTokenId: BigNumberish],
+    [bigint[]],
     "view"
   >;
 
   getLicense: TypedContractMethod<
     [licenseId: BigNumberish],
-    [
-      [string, bigint, bigint, bigint, bigint, boolean, boolean, string] & {
-        licensee: string;
-        tokenId: bigint;
-        royaltyPercentage: bigint;
-        duration: bigint;
-        startDate: bigint;
-        isActive: boolean;
-        commercialUse: boolean;
-        terms: string;
-      }
-    ],
+    [ModredIP.LicenseStructOutput],
     "view"
   >;
 
-  getRoyaltyInfo: TypedContractMethod<
-    [tokenId: BigNumberish, user: AddressLike],
-    [
-      [bigint, bigint, bigint, bigint] & {
-        totalRevenue: bigint;
-        royaltyShare: bigint;
-        claimedAmount: bigint;
-        claimableAmount: bigint;
-      }
-    ],
+  getLicenseeLicenses: TypedContractMethod<
+    [licensee: AddressLike],
+    [bigint[]],
+    "view"
+  >;
+
+  getOwnerIPs: TypedContractMethod<[owner: AddressLike], [bigint[]], "view">;
+
+  getRoyaltyShare: TypedContractMethod<
+    [ipTokenId: BigNumberish, holder: AddressLike],
+    [bigint],
     "view"
   >;
 
@@ -766,19 +922,33 @@ export interface ModredIP extends BaseContract {
         boolean,
         bigint,
         bigint,
-        bigint
+        bigint,
+        string
       ] & {
         tokenId: bigint;
         owner: string;
         ipHash: string;
         metadata: string;
-        isEncrypted: boolean;
+        isActive: boolean;
         isDisputed: boolean;
         registrationDate: bigint;
         totalRevenue: bigint;
         royaltyTokens: bigint;
+        tokenBoundAccount: string;
       }
     ],
+    "view"
+  >;
+
+  ipToDisputes: TypedContractMethod<
+    [arg0: BigNumberish, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
+
+  ipToLicenses: TypedContractMethod<
+    [arg0: BigNumberish, arg1: BigNumberish],
+    [bigint],
     "view"
   >;
 
@@ -788,28 +958,38 @@ export interface ModredIP extends BaseContract {
     "view"
   >;
 
+  licenseeToLicenses: TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
+
   licenses: TypedContractMethod<
     [arg0: BigNumberish],
     [
       [
         bigint,
+        bigint,
         string,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
         boolean,
+        boolean,
+        boolean,
+        bigint,
+        bigint,
+        bigint,
         boolean,
         string
       ] & {
         licenseId: bigint;
+        ipTokenId: bigint;
         licensee: string;
-        tokenId: bigint;
-        royaltyPercentage: bigint;
-        duration: bigint;
-        startDate: bigint;
-        isActive: boolean;
         commercialUse: boolean;
+        derivativeWorks: boolean;
+        exclusive: boolean;
+        revenueShare: bigint;
+        duration: bigint;
+        issueDate: bigint;
+        isActive: boolean;
         terms: string;
       }
     ],
@@ -818,10 +998,12 @@ export interface ModredIP extends BaseContract {
 
   mintLicense: TypedContractMethod<
     [
-      tokenId: BigNumberish,
-      royaltyPercentage: BigNumberish,
-      duration: BigNumberish,
+      ipTokenId: BigNumberish,
       commercialUse: boolean,
+      derivativeWorks: boolean,
+      exclusive: boolean,
+      revenueShare: BigNumberish,
+      duration: BigNumberish,
       terms: string
     ],
     [bigint],
@@ -830,47 +1012,47 @@ export interface ModredIP extends BaseContract {
 
   name: TypedContractMethod<[], [string], "view">;
 
-  nextDisputeId: TypedContractMethod<[], [bigint], "view">;
-
-  nextLicenseId: TypedContractMethod<[], [bigint], "view">;
-
-  nextTokenId: TypedContractMethod<[], [bigint], "view">;
-
   owner: TypedContractMethod<[], [string], "view">;
 
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
-  payRevenue: TypedContractMethod<[tokenId: BigNumberish], [void], "payable">;
-
-  platformFeeCollector: TypedContractMethod<[], [string], "view">;
-
-  platformFeePercentage: TypedContractMethod<[], [bigint], "view">;
-
-  raiseDispute: TypedContractMethod<
-    [tokenId: BigNumberish, reason: string],
-    [void],
-    "nonpayable"
+  ownerToIPs: TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
+    "view"
   >;
 
-  registerIP: TypedContractMethod<
-    [ipHash: string, metadata: string, isEncrypted: boolean],
+  payRevenue: TypedContractMethod<
+    [ipTokenId: BigNumberish, description: string],
+    [void],
+    "payable"
+  >;
+
+  ping: TypedContractMethod<[], [string], "view">;
+
+  raiseDispute: TypedContractMethod<
+    [ipTokenId: BigNumberish, reason: string, evidence: string],
     [bigint],
     "nonpayable"
   >;
 
-  registry: TypedContractMethod<[], [string], "view">;
+  registerIP: TypedContractMethod<
+    [ipHash: string, metadata: string, tokenUriString: string],
+    [bigint],
+    "nonpayable"
+  >;
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
   resolveDispute: TypedContractMethod<
-    [disputeId: BigNumberish, resolution: string],
+    [disputeId: BigNumberish, status: BigNumberish, arbitrator: AddressLike],
     [void],
     "nonpayable"
   >;
 
-  royaltyVaults: TypedContractMethod<
-    [arg0: BigNumberish],
-    [[bigint, bigint] & { tokenId: bigint; totalRevenue: bigint }],
+  royaltyShares: TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [bigint],
     "view"
   >;
 
@@ -897,14 +1079,8 @@ export interface ModredIP extends BaseContract {
     "nonpayable"
   >;
 
-  setPlatformFeeCollector: TypedContractMethod<
-    [_collector: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
-  setPlatformFeePercentage: TypedContractMethod<
-    [_percentage: BigNumberish],
+  setIPStatus: TypedContractMethod<
+    [ipTokenId: BigNumberish, isActive: boolean],
     [void],
     "nonpayable"
   >;
@@ -919,13 +1095,13 @@ export interface ModredIP extends BaseContract {
 
   tokenURI: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
-  transferFrom: TypedContractMethod<
-    [from: AddressLike, to: AddressLike, tokenId: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
+  totalDisputes: TypedContractMethod<[], [bigint], "view">;
 
-  transferIP: TypedContractMethod<
+  totalIPs: TypedContractMethod<[], [bigint], "view">;
+
+  totalLicenses: TypedContractMethod<[], [bigint], "view">;
+
+  transferFrom: TypedContractMethod<
     [from: AddressLike, to: AddressLike, tokenId: BigNumberish],
     [void],
     "nonpayable"
@@ -937,18 +1113,23 @@ export interface ModredIP extends BaseContract {
     "nonpayable"
   >;
 
+  transferRoyaltyShares: TypedContractMethod<
+    [ipTokenId: BigNumberish, to: AddressLike, amount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  version: TypedContractMethod<[], [string], "view">;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
 
   getFunction(
-    nameOrSignature: "DISPUTE_TIMEOUT"
+    nameOrSignature: "PLATFORM_FEE"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "MINIMUM_LICENSE_DURATION"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "ROYALTY_DECIMALS"
+    nameOrSignature: "ROYALTY_DENOMINATOR"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "accountImplementation"
@@ -964,83 +1145,70 @@ export interface ModredIP extends BaseContract {
     nameOrSignature: "balanceOf"
   ): TypedContractMethod<[owner: AddressLike], [bigint], "view">;
   getFunction(
-    nameOrSignature: "chainId"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
     nameOrSignature: "claimRoyalties"
-  ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<[ipTokenId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "disputes"
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [bigint, bigint, string, string, bigint, boolean, string, string] & {
+      [bigint, bigint, string, string, string, bigint, bigint, string] & {
         disputeId: bigint;
-        tokenId: bigint;
+        ipTokenId: bigint;
         disputer: string;
         reason: string;
+        evidence: string;
         timestamp: bigint;
-        isResolved: boolean;
+        status: bigint;
         arbitrator: string;
-        resolution: string;
       }
     ],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "erc6551Registry"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "getApproved"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
   getFunction(
-    nameOrSignature: "getIPAccount"
-  ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
+    nameOrSignature: "getDispute"
+  ): TypedContractMethod<
+    [disputeId: BigNumberish],
+    [ModredIP.DisputeStructOutput],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getIPAsset"
   ): TypedContractMethod<
     [tokenId: BigNumberish],
-    [
-      [string, string, string, boolean, boolean, bigint, bigint, bigint] & {
-        owner: string;
-        ipHash: string;
-        metadata: string;
-        isEncrypted: boolean;
-        isDisputed: boolean;
-        registrationDate: bigint;
-        totalRevenue: bigint;
-        royaltyTokens: bigint;
-      }
-    ],
+    [ModredIP.IPAssetStructOutput],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "getIPDisputes"
+  ): TypedContractMethod<[ipTokenId: BigNumberish], [bigint[]], "view">;
+  getFunction(
+    nameOrSignature: "getIPLicenses"
+  ): TypedContractMethod<[ipTokenId: BigNumberish], [bigint[]], "view">;
   getFunction(
     nameOrSignature: "getLicense"
   ): TypedContractMethod<
     [licenseId: BigNumberish],
-    [
-      [string, bigint, bigint, bigint, bigint, boolean, boolean, string] & {
-        licensee: string;
-        tokenId: bigint;
-        royaltyPercentage: bigint;
-        duration: bigint;
-        startDate: bigint;
-        isActive: boolean;
-        commercialUse: boolean;
-        terms: string;
-      }
-    ],
+    [ModredIP.LicenseStructOutput],
     "view"
   >;
   getFunction(
-    nameOrSignature: "getRoyaltyInfo"
+    nameOrSignature: "getLicenseeLicenses"
+  ): TypedContractMethod<[licensee: AddressLike], [bigint[]], "view">;
+  getFunction(
+    nameOrSignature: "getOwnerIPs"
+  ): TypedContractMethod<[owner: AddressLike], [bigint[]], "view">;
+  getFunction(
+    nameOrSignature: "getRoyaltyShare"
   ): TypedContractMethod<
-    [tokenId: BigNumberish, user: AddressLike],
-    [
-      [bigint, bigint, bigint, bigint] & {
-        totalRevenue: bigint;
-        royaltyShare: bigint;
-        claimedAmount: bigint;
-        claimableAmount: bigint;
-      }
-    ],
+    [ipTokenId: BigNumberish, holder: AddressLike],
+    [bigint],
     "view"
   >;
   getFunction(
@@ -1057,19 +1225,35 @@ export interface ModredIP extends BaseContract {
         boolean,
         bigint,
         bigint,
-        bigint
+        bigint,
+        string
       ] & {
         tokenId: bigint;
         owner: string;
         ipHash: string;
         metadata: string;
-        isEncrypted: boolean;
+        isActive: boolean;
         isDisputed: boolean;
         registrationDate: bigint;
         totalRevenue: bigint;
         royaltyTokens: bigint;
+        tokenBoundAccount: string;
       }
     ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "ipToDisputes"
+  ): TypedContractMethod<
+    [arg0: BigNumberish, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "ipToLicenses"
+  ): TypedContractMethod<
+    [arg0: BigNumberish, arg1: BigNumberish],
+    [bigint],
     "view"
   >;
   getFunction(
@@ -1080,29 +1264,40 @@ export interface ModredIP extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "licenseeToLicenses"
+  ): TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "licenses"
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
       [
         bigint,
+        bigint,
         string,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
         boolean,
+        boolean,
+        boolean,
+        bigint,
+        bigint,
+        bigint,
         boolean,
         string
       ] & {
         licenseId: bigint;
+        ipTokenId: bigint;
         licensee: string;
-        tokenId: bigint;
-        royaltyPercentage: bigint;
-        duration: bigint;
-        startDate: bigint;
-        isActive: boolean;
         commercialUse: boolean;
+        derivativeWorks: boolean;
+        exclusive: boolean;
+        revenueShare: bigint;
+        duration: bigint;
+        issueDate: bigint;
+        isActive: boolean;
         terms: string;
       }
     ],
@@ -1112,10 +1307,12 @@ export interface ModredIP extends BaseContract {
     nameOrSignature: "mintLicense"
   ): TypedContractMethod<
     [
-      tokenId: BigNumberish,
-      royaltyPercentage: BigNumberish,
-      duration: BigNumberish,
+      ipTokenId: BigNumberish,
       commercialUse: boolean,
+      derivativeWorks: boolean,
+      exclusive: boolean,
+      revenueShare: BigNumberish,
+      duration: BigNumberish,
       terms: string
     ],
     [bigint],
@@ -1125,61 +1322,57 @@ export interface ModredIP extends BaseContract {
     nameOrSignature: "name"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "nextDisputeId"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "nextLicenseId"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "nextTokenId"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "ownerOf"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
   getFunction(
+    nameOrSignature: "ownerToIPs"
+  ): TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [bigint],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "payRevenue"
-  ): TypedContractMethod<[tokenId: BigNumberish], [void], "payable">;
+  ): TypedContractMethod<
+    [ipTokenId: BigNumberish, description: string],
+    [void],
+    "payable"
+  >;
   getFunction(
-    nameOrSignature: "platformFeeCollector"
+    nameOrSignature: "ping"
   ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "platformFeePercentage"
-  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "raiseDispute"
   ): TypedContractMethod<
-    [tokenId: BigNumberish, reason: string],
-    [void],
+    [ipTokenId: BigNumberish, reason: string, evidence: string],
+    [bigint],
     "nonpayable"
   >;
   getFunction(
     nameOrSignature: "registerIP"
   ): TypedContractMethod<
-    [ipHash: string, metadata: string, isEncrypted: boolean],
+    [ipHash: string, metadata: string, tokenUriString: string],
     [bigint],
     "nonpayable"
   >;
-  getFunction(
-    nameOrSignature: "registry"
-  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "renounceOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "resolveDispute"
   ): TypedContractMethod<
-    [disputeId: BigNumberish, resolution: string],
+    [disputeId: BigNumberish, status: BigNumberish, arbitrator: AddressLike],
     [void],
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "royaltyVaults"
+    nameOrSignature: "royaltyShares"
   ): TypedContractMethod<
-    [arg0: BigNumberish],
-    [[bigint, bigint] & { tokenId: bigint; totalRevenue: bigint }],
+    [arg0: BigNumberish, arg1: AddressLike],
+    [bigint],
     "view"
   >;
   getFunction(
@@ -1209,11 +1402,12 @@ export interface ModredIP extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "setPlatformFeeCollector"
-  ): TypedContractMethod<[_collector: AddressLike], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "setPlatformFeePercentage"
-  ): TypedContractMethod<[_percentage: BigNumberish], [void], "nonpayable">;
+    nameOrSignature: "setIPStatus"
+  ): TypedContractMethod<
+    [ipTokenId: BigNumberish, isActive: boolean],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
@@ -1224,14 +1418,16 @@ export interface ModredIP extends BaseContract {
     nameOrSignature: "tokenURI"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
   getFunction(
-    nameOrSignature: "transferFrom"
-  ): TypedContractMethod<
-    [from: AddressLike, to: AddressLike, tokenId: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
+    nameOrSignature: "totalDisputes"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "transferIP"
+    nameOrSignature: "totalIPs"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "totalLicenses"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "transferFrom"
   ): TypedContractMethod<
     [from: AddressLike, to: AddressLike, tokenId: BigNumberish],
     [void],
@@ -1240,6 +1436,16 @@ export interface ModredIP extends BaseContract {
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "transferRoyaltyShares"
+  ): TypedContractMethod<
+    [ipTokenId: BigNumberish, to: AddressLike, amount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "version"
+  ): TypedContractMethod<[], [string], "view">;
 
   getEvent(
     key: "Approval"
@@ -1284,11 +1490,11 @@ export interface ModredIP extends BaseContract {
     IPRegisteredEvent.OutputObject
   >;
   getEvent(
-    key: "IPTransferred"
+    key: "IPStatusChanged"
   ): TypedContractEvent<
-    IPTransferredEvent.InputTuple,
-    IPTransferredEvent.OutputTuple,
-    IPTransferredEvent.OutputObject
+    IPStatusChangedEvent.InputTuple,
+    IPStatusChangedEvent.OutputTuple,
+    IPStatusChangedEvent.OutputObject
   >;
   getEvent(
     key: "LicenseMinted"
@@ -1367,7 +1573,7 @@ export interface ModredIP extends BaseContract {
       BatchMetadataUpdateEvent.OutputObject
     >;
 
-    "DisputeRaised(uint256,uint256,address,string)": TypedContractEvent<
+    "DisputeRaised(uint256,uint256,address)": TypedContractEvent<
       DisputeRaisedEvent.InputTuple,
       DisputeRaisedEvent.OutputTuple,
       DisputeRaisedEvent.OutputObject
@@ -1378,7 +1584,7 @@ export interface ModredIP extends BaseContract {
       DisputeRaisedEvent.OutputObject
     >;
 
-    "DisputeResolved(uint256,string)": TypedContractEvent<
+    "DisputeResolved(uint256,uint8)": TypedContractEvent<
       DisputeResolvedEvent.InputTuple,
       DisputeResolvedEvent.OutputTuple,
       DisputeResolvedEvent.OutputObject
@@ -1389,7 +1595,7 @@ export interface ModredIP extends BaseContract {
       DisputeResolvedEvent.OutputObject
     >;
 
-    "IPRegistered(uint256,address,string,string)": TypedContractEvent<
+    "IPRegistered(uint256,address,string,address)": TypedContractEvent<
       IPRegisteredEvent.InputTuple,
       IPRegisteredEvent.OutputTuple,
       IPRegisteredEvent.OutputObject
@@ -1400,18 +1606,18 @@ export interface ModredIP extends BaseContract {
       IPRegisteredEvent.OutputObject
     >;
 
-    "IPTransferred(uint256,address,address)": TypedContractEvent<
-      IPTransferredEvent.InputTuple,
-      IPTransferredEvent.OutputTuple,
-      IPTransferredEvent.OutputObject
+    "IPStatusChanged(uint256,bool,bool)": TypedContractEvent<
+      IPStatusChangedEvent.InputTuple,
+      IPStatusChangedEvent.OutputTuple,
+      IPStatusChangedEvent.OutputObject
     >;
-    IPTransferred: TypedContractEvent<
-      IPTransferredEvent.InputTuple,
-      IPTransferredEvent.OutputTuple,
-      IPTransferredEvent.OutputObject
+    IPStatusChanged: TypedContractEvent<
+      IPStatusChangedEvent.InputTuple,
+      IPStatusChangedEvent.OutputTuple,
+      IPStatusChangedEvent.OutputObject
     >;
 
-    "LicenseMinted(uint256,uint256,address,uint256)": TypedContractEvent<
+    "LicenseMinted(uint256,uint256,address)": TypedContractEvent<
       LicenseMintedEvent.InputTuple,
       LicenseMintedEvent.OutputTuple,
       LicenseMintedEvent.OutputObject
@@ -1444,7 +1650,7 @@ export interface ModredIP extends BaseContract {
       OwnershipTransferredEvent.OutputObject
     >;
 
-    "RevenuePaid(uint256,address,uint256)": TypedContractEvent<
+    "RevenuePaid(uint256,address,uint256,string)": TypedContractEvent<
       RevenuePaidEvent.InputTuple,
       RevenuePaidEvent.OutputTuple,
       RevenuePaidEvent.OutputObject

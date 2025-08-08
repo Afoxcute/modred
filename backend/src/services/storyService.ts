@@ -1,9 +1,8 @@
-import { mintNFT } from '../utils/functions/mintNFT';
-import { createCommercialRemixTerms, NFTContractAddress, WIP_TOKEN_ADDRESS } from '../utils/utils';
 import { publicClient, walletClient, account, networkInfo, BLOCK_EXPLORER_URL } from '../utils/config';
 import { uploadJSONToIPFS } from '../utils/functions/uploadToIpfs';
 import { createHash } from 'crypto';
 import { Address } from 'viem';
+import { MODRED_IP_ABI, CONTRACT_ADDRESSES } from '../config/contracts';
 
 // IP Metadata interface for Hedera
 export interface IpMetadata {
@@ -20,91 +19,16 @@ export interface IpMetadata {
     created_at?: string;
 }
 
-// ModredIP contract ABI (simplified for IP registration)
-const MODRED_IP_ABI = [
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "ipHash",
-                "type": "string"
-            },
-            {
-                "internalType": "string",
-                "name": "metadata",
-                "type": "string"
-            },
-            {
-                "internalType": "bool",
-                "name": "isEncrypted",
-                "type": "bool"
-            }
-        ],
-        "name": "registerIP",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "tokenId",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "royaltyPercentage",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "duration",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bool",
-                "name": "commercialUse",
-                "type": "bool"
-            },
-            {
-                "internalType": "string",
-                "name": "terms",
-                "type": "string"
-            }
-        ],
-        "name": "mintLicense",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }
-] as const;
-
 export const registerIpWithHedera = async (
     ipHash: string,
     metadata: string,
-    isEncrypted: boolean,
-    modredIpContractAddress: Address
+    tokenUriString: string = "",
+    modredIpContractAddress: Address = CONTRACT_ADDRESSES.MODRED_IP
 ) => {
     try {
-        if (!account) {
-            throw new Error('Wallet account not configured. Please set WALLET_PRIVATE_KEY in .env file.');
-        }
         console.log('ipHash:', ipHash);
         console.log('metadata:', metadata);
-        console.log('isEncrypted:', isEncrypted);
+        console.log('tokenUriString:', tokenUriString);
 
         // Register IP on ModredIP contract
         const { request } = await publicClient.simulateContract({
@@ -114,14 +38,15 @@ export const registerIpWithHedera = async (
             args: [
                 ipHash,
                 metadata,
-                isEncrypted
+                tokenUriString
             ],
             account: account.address,
         });
 
         const hash = await walletClient.writeContract({
             ...request,
-        });
+            account: account,
+  });
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
@@ -160,12 +85,9 @@ export const mintLicenseOnHedera = async (
     revenueShare: number,
     duration: number,
     terms: string,
-    modredIpContractAddress: Address
+    modredIpContractAddress: Address = CONTRACT_ADDRESSES.MODRED_IP
 ) => {
     try {
-        if (!account) {
-            throw new Error('Wallet account not configured. Please set WALLET_PRIVATE_KEY in .env file.');
-        }
         const { request } = await publicClient.simulateContract({
             address: modredIpContractAddress,
             abi: MODRED_IP_ABI,
@@ -184,6 +106,7 @@ export const mintLicenseOnHedera = async (
 
         const hash = await walletClient.writeContract({
             ...request,
+            account: account,
         });
 
         const receipt = await publicClient.waitForTransactionReceipt({ hash });

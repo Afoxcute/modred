@@ -7,6 +7,7 @@ import { IPPortfolio } from "./components/IPPortfolio";
 import "./components/IPPortfolio.css";
 
 import {
+  defineChain,
   getContract,
   prepareContractCall,
   readContract,
@@ -17,22 +18,7 @@ import {
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { createWallet, inAppWallet } from "thirdweb/wallets";
 import { parseEther, formatEther } from "viem";
-
-// Define Hedera testnet chain for thirdweb
-const hederaTestnet = {
-  id: 296,
-  name: 'Hedera Testnet',
-  nativeCurrency: {
-    name: 'HBAR',
-    symbol: 'HBAR',
-    decimals: 18,
-  },
-  rpc: 'https://testnet.hashio.io/api',
-  blockExplorers: [{
-    name: 'Hedera Testnet Explorer',
-    url: 'https://testnet.hashscan.io',
-  }],
-};
+import { hederaTestnet } from "viem/chains";
 import CONTRACT_ADDRESS_JSON from "./deployed_addresses.json";
 
 // Backend API configuration
@@ -100,9 +86,6 @@ const generateFilePreview = (file: File): Promise<string | null> => {
     }
   });
 };
-
-// Remove hardcoded Pinata credentials
-const PINATA_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI5MjJjNmZkOC04ZTZhLTQxMzUtODA4ZS05ZTkwZTMyMjViNTIiLCJlbWFpbCI6Imp3YXZvbGFiaWxvdmUwMDE2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiJkZDI1MzM4YmRmYTdjNzlmYjY4NyIsInNjb3BlZEtleVNlY3JldCI6ImFiYTJjMzcwNWExMzNlZmVjNzM3NzQwZGNjMGJjOTE4MGY2M2IzZjkxY2E5MzVlYWE3NzUxMDhjOGNkYjMyZDciLCJleHAiOjE3ODU3NDg3ODh9.I6RIrBphVycV-75XK_pippeZngj6QntUZZjFMnGtqFA";
 
 /**
  * Uploads a file to IPFS via Pinata
@@ -247,7 +230,10 @@ const parseMetadata = async (metadataUri: string) => {
       description: "No description available"
     };
   }
-};
+}; 
+
+// Pinata JWT for IPFS uploads
+const PINATA_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI5MjJjNmZkOC04ZTZhLTQxMzUtODA4ZS05ZTkwZTMyMjViNTIiLCJlbWFpbCI6Imp3YXZvbGFiaWxvdmUwMDE2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaW5fcG9saWN5Ijp7InJlZ2lvbnMiOlt7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6IkZSQTEifSx7ImRlc2lyZWRSZXBsaWNhdGlvbkNvdW50IjoxLCJpZCI6Ik5ZQzEifV0sInZlcnNpb24iOjF9LCJtZmFfZW5hYmxlZCI6ZmFsc2UsInN0YXR1cyI6IkFDVElWRSJ9LCJhdXRoZW50aWNhdGlvblR5cGUiOiJzY29wZWRLZXkiLCJzY29wZWRLZXlLZXkiOiJkZDI1MzM4YmRmYTdjNzlmYjY4NyIsInNjb3BlZEtleVNlY3JldCI6ImFiYTJjMzcwNWExMzNlZmVjNzM3NzQwZGNjMGJjOTE4MGY2M2IzZjkxY2E5MzVlYWE3NzUxMDhjOGNkYjMyZDciLCJleHAiOjE3ODU3NDg3ODh9.I6RIrBphVycV-75XK_pippeZngj6QntUZZjFMnGtqFA"; 
 
 const wallets = [
   inAppWallet({
@@ -262,21 +248,8 @@ const wallets = [
   createWallet("global.safe"),
 ];
 
-// ModredIP Contract ABI (for Hedera deployment)
+// ModredIP Contract ABI (simplified for the functions we need)
 const MODRED_IP_ABI = [
-  {
-    inputs: [
-      { name: "ipHash", type: "string" },
-      { name: "metadata", type: "string" },
-      { name: "tokenUriString", type: "string" }
-    ],
-    name: "registerIP",
-    outputs: [
-      { name: "", type: "uint256" }
-    ],
-    stateMutability: "nonpayable",
-    type: "function"
-  },
   {
     inputs: [
       { name: "tokenId", type: "uint256" }
@@ -295,23 +268,6 @@ const MODRED_IP_ABI = [
       { name: "tokenBoundAccount", type: "address" }
     ],
     stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "ipTokenId", type: "uint256" },
-      { name: "commercialUse", type: "bool" },
-      { name: "derivativeWorks", type: "bool" },
-      { name: "exclusive", type: "bool" },
-      { name: "revenueShare", type: "uint256" },
-      { name: "duration", type: "uint256" },
-      { name: "terms", type: "string" }
-    ],
-    name: "mintLicense",
-    outputs: [
-      { name: "", type: "uint256" }
-    ],
-    stateMutability: "nonpayable",
     type: "function"
   },
   {
@@ -351,7 +307,34 @@ const MODRED_IP_ABI = [
   },
   {
     inputs: [
-      { name: "tokenId", type: "uint256" }
+      { name: "ipHash", type: "string" },
+      { name: "metadata", type: "string" },
+      { name: "tokenUriString", type: "string" }
+    ],
+    name: "registerIP",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "ipTokenId", type: "uint256" },
+      { name: "commercialUse", type: "bool" },
+      { name: "derivativeWorks", type: "bool" },
+      { name: "exclusive", type: "bool" },
+      { name: "revenueShare", type: "uint256" },
+      { name: "duration", type: "uint256" },
+      { name: "terms", type: "string" }
+    ],
+    name: "mintLicense",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "ipTokenId", type: "uint256" },
+      { name: "description", type: "string" }
     ],
     name: "payRevenue",
     outputs: [],
@@ -360,28 +343,14 @@ const MODRED_IP_ABI = [
   },
   {
     inputs: [
-      { name: "tokenId", type: "uint256" }
+      { name: "ipTokenId", type: "uint256" }
     ],
     name: "claimRoyalties",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function"
-  },
-  {
-    inputs: [],
-    name: "ping",
-    outputs: [{ name: "", type: "string" }],
-    stateMutability: "pure",
-    type: "function"
-  },
-  {
-    inputs: [],
-    name: "version",
-    outputs: [{ name: "", type: "string" }],
-    stateMutability: "pure",
-    type: "function"
   }
-] as const;
+] as const; 
 
 interface IPAsset {
   owner: string;
@@ -490,7 +459,7 @@ const EnhancedAssetPreview: React.FC<{
       </div>
     </>
   );
-};
+}; 
 
 export default function App({ thirdwebClient }: AppProps) {
   const account = useActiveAccount();
@@ -685,42 +654,20 @@ export default function App({ thirdwebClient }: AppProps) {
 
     try {
       setLoading(true);
-      const contractAddress = CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"];
-      console.log('Contract address:', contractAddress);
-      console.log('Chain:', hederaTestnet);
-      
       const contract = getContract({
         abi: MODRED_IP_ABI,
           client: thirdwebClient,
-          chain: hederaTestnet,
-        address: contractAddress,
+          chain: defineChain(hederaTestnet.id),
+        address: CONTRACT_ADDRESS_JSON["ModredIPDeployModule#ModredIP"],
       });
 
-      console.log('Contract instance created:', contract);
-
-      // Test contract connection with ping
-      try {
-        console.log('Testing contract connection with ping...');
-        const pingResult = await readContract({
-          contract,
-          method: "ping",
-          params: [],
-        });
-        console.log('Ping result:', pingResult);
-      } catch (pingError) {
-        console.error('Ping failed:', pingError);
-        throw new Error(`Contract not accessible: ${pingError}`);
-      }
-
       // Get total IPs
-      console.log('Calling totalIPs...');
       const totalIPs = await readContract({
         contract,
         method: "totalIPs",
         params: [],
       });
       const totalIPsNum = Number(totalIPs);
-      console.log('Total IPs:', totalIPsNum);
 
       // Get total licenses
       const totalLicenses = await readContract({
@@ -732,30 +679,24 @@ export default function App({ thirdwebClient }: AppProps) {
 
       // Load IP assets
       const newIpAssets = new Map<number, IPAsset>();
-      console.log(`Loading ${totalIPsNum} IP assets...`);
-      
-      for (let i = 0; i < totalIPsNum; i++) {
+      for (let i = 1; i <= totalIPsNum; i++) {
         try {
           const ipAsset = await readContract({
             contract,
             method: "getIPAsset",
             params: [BigInt(i)],
           });
-          
-          console.log(`IP Asset ${i}:`, ipAsset);
-          
           newIpAssets.set(i, {
-            owner: ipAsset[1], // owner is at index 1
-            ipHash: ipAsset[2], // ipHash is at index 2
-            metadata: ipAsset[3], // metadata is at index 3
-            isEncrypted: false, // this field doesn't exist in the new contract, default to false
-            isDisputed: ipAsset[5], // isDisputed is at index 5
-            registrationDate: ipAsset[6], // registrationDate is at index 6
-            totalRevenue: ipAsset[7], // totalRevenue is at index 7
-            royaltyTokens: ipAsset[8], // royaltyTokens is at index 8
+            owner: ipAsset[1], // owner
+            ipHash: ipAsset[2], // ipHash
+            metadata: ipAsset[3], // metadata
+            isEncrypted: false, // Default value since contract doesn't have this field
+            isDisputed: ipAsset[5], // isDisputed
+            registrationDate: ipAsset[6], // registrationDate
+            totalRevenue: ipAsset[7], // totalRevenue
+            royaltyTokens: ipAsset[8], // royaltyTokens
           });
         } catch (error) {
-          console.log(`Failed to load IP asset ${i}:`, error);
           // Token doesn't exist, skip
         }
       }
@@ -779,30 +720,24 @@ export default function App({ thirdwebClient }: AppProps) {
 
       // Load licenses
       const newLicenses = new Map<number, License>();
-      console.log(`Loading ${totalLicensesNum} licenses...`);
-      
-      for (let i = 0; i < totalLicensesNum; i++) {
+      for (let i = 1; i <= totalLicensesNum; i++) {
         try {
           const license = await readContract({
             contract,
             method: "getLicense",
             params: [BigInt(i)],
           });
-          
-          console.log(`License ${i}:`, license);
-          
           newLicenses.set(i, {
-            licensee: license[2], // licensee is at index 2
-            tokenId: license[1], // ipTokenId is at index 1
-            royaltyPercentage: license[6], // revenueShare is at index 6 
-            duration: license[7], // duration is at index 7
-            startDate: license[8], // issueDate is at index 8
-            isActive: license[9], // isActive is at index 9
-            commercialUse: license[3], // commercialUse is at index 3
-            terms: license[10], // terms is at index 10
+            licensee: license[2], // licensee
+            tokenId: license[1], // ipTokenId
+            royaltyPercentage: license[6], // revenueShare
+            duration: license[7], // duration
+            startDate: license[8], // issueDate
+            isActive: license[9], // isActive
+            commercialUse: license[3], // commercialUse
+            terms: license[10], // terms
           });
         } catch (error) {
-          console.log(`Failed to load license ${i}:`, error);
           // License doesn't exist, skip
         }
       }
@@ -860,7 +795,6 @@ export default function App({ thirdwebClient }: AppProps) {
     try {
       setLoading(true);
 
-
       // Create and upload metadata to IPFS
       const metadataUri = await createNFTMetadata(ipHash, ipName, ipDescription, isEncrypted);
 
@@ -888,34 +822,13 @@ export default function App({ thirdwebClient }: AppProps) {
         // Blockchain metadata
         network: 'hedera',
         chain_id: '296',
-        contract_address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+        contract_address: CONTRACT_ADDRESS_JSON["ModredIPDeployModule#ModredIP"],
         // Infringement detection metadata
         monitoring_enabled: true,
         infringement_alerts: true,
         content_hash: ipHash,
         original_filename: ipFile?.name || 'unknown'
       };
-
-      // Prepare NFT metadata for backend
-      // const nftMetadata = {
-      //   name: ipName,
-      //   description: ipDescription,
-      //   image: metadataUri,
-      //   attributes: [
-      //     {
-      //       trait_type: "IP Hash",
-      //       value: ipHash
-      //     },
-      //     {
-      //       trait_type: "Creator",
-      //       value: account.address
-      //     },
-      //     {
-      //       trait_type: "Encrypted",
-      //       value: isEncrypted
-      //     }
-      //   ]
-      // };
 
       // Call backend API
       const response = await fetch(`${BACKEND_URL}/api/register`, {
@@ -927,7 +840,7 @@ export default function App({ thirdwebClient }: AppProps) {
           ipHash: ipHash,
           metadata: JSON.stringify(ipMetadata),
           isEncrypted: isEncrypted,
-          modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"]
+          modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPDeployModule#ModredIP"]
         })
       });
 
@@ -941,11 +854,11 @@ export default function App({ thirdwebClient }: AppProps) {
 
       // Show success notification
       notifySuccess('IP Asset Registered', 
-        `Successfully registered IP asset!\nTransaction: ${result.hedera.txHash}\nIP Asset ID: ${result.hedera.ipAssetId}`,
+        `Successfully registered IP asset!\nTransaction: ${result.data.hedera.txHash}\nIP Asset ID: ${result.data.hedera.ipAssetId}`,
         {
           action: {
             label: 'View Transaction',
-            onClick: () => window.open(`https://testnet.hashscan.io/tx/${result.hedera.txHash}`, '_blank')
+            onClick: () => window.open(`https://testnet.hashio.io/api/tx/${result.data.hedera.txHash}`, '_blank')
           }
         }
       );
@@ -979,7 +892,6 @@ export default function App({ thirdwebClient }: AppProps) {
     try {
       setLoading(true);
 
-
       // Prepare license terms for backend
       const licenseTerms = {
         tokenId: selectedTokenId,
@@ -1009,14 +921,12 @@ export default function App({ thirdwebClient }: AppProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ipTokenId: selectedTokenId,
-          commercialUse: commercialUse,
-          derivativeWorks: derivativesAllowed,
-          exclusive: false, // default to non-exclusive
-          revenueShare: royaltyPercentage * 100, // convert percentage to basis points
+          tokenId: selectedTokenId,
+          royaltyPercentage: royaltyPercentage,
           duration: licenseDuration,
+          commercialUse: commercialUse,
           terms: licenseTerms.terms,
-          modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"]
+          modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPDeployModule#ModredIP"]
         })
       });
 
@@ -1034,7 +944,7 @@ export default function App({ thirdwebClient }: AppProps) {
         {
           action: {
             label: 'View Transaction',
-            onClick: () => window.open(`https://testnet.hashscan.io/tx/${result.data.txHash}`, '_blank')
+            onClick: () => window.open(`https://testnet.hashio.io/api/tx/${result.data.txHash}`, '_blank')
           }
         }
       );
@@ -1076,19 +986,19 @@ export default function App({ thirdwebClient }: AppProps) {
 
     try {
       setLoading(true);
-      notifyInfo('Processing Payment', `Paying ${paymentAmount} HBAR in revenue...`);
+      notifyInfo('Processing Payment', `Paying ${paymentAmount} XTZ in revenue...`);
 
         const contract = getContract({
         abi: MODRED_IP_ABI,
           client: thirdwebClient,
-          chain: hederaTestnet,
-        address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+          chain: defineChain(hederaTestnet.id),
+        address: CONTRACT_ADDRESS_JSON["ModredIPDeployModule#ModredIP"],
         });
 
       const preparedCall = await prepareContractCall({
           contract,
         method: "payRevenue",
-        params: [BigInt(paymentTokenId)],
+        params: [BigInt(paymentTokenId), "Revenue payment"],
         value: parseEther(paymentAmount),
         });
 
@@ -1099,12 +1009,12 @@ export default function App({ thirdwebClient }: AppProps) {
 
       await waitForReceipt({
           client: thirdwebClient,
-          chain: hederaTestnet,
+          chain: defineChain(hederaTestnet.id),
           transactionHash: transaction.transactionHash,
         });
 
       // Show success notification
-      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} HBAR in revenue!`);
+      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} XTZ in revenue!`);
 
       // Reset form
       setPaymentAmount("");
@@ -1135,8 +1045,8 @@ export default function App({ thirdwebClient }: AppProps) {
         const contract = getContract({
         abi: MODRED_IP_ABI,
           client: thirdwebClient,
-          chain: hederaTestnet,
-        address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+          chain: defineChain(hederaTestnet.id),
+        address: CONTRACT_ADDRESS_JSON["ModredIPDeployModule#ModredIP"],
         });
 
       const preparedCall = await prepareContractCall({
@@ -1152,7 +1062,7 @@ export default function App({ thirdwebClient }: AppProps) {
 
       await waitForReceipt({
         client: thirdwebClient,
-        chain: hederaTestnet,
+        chain: defineChain(hederaTestnet.id),
         transactionHash: transaction.transactionHash,
       });
 
@@ -1192,13 +1102,11 @@ export default function App({ thirdwebClient }: AppProps) {
             <ConnectButton
               client={thirdwebClient}
               wallets={wallets}
-              chain={hederaTestnet}
+              chain={defineChain(hederaTestnet.id)}
             />
           </div>
         </div>
       </header>
-
-      
 
       {loading && (
         <div className="loading">
@@ -1207,488 +1115,490 @@ export default function App({ thirdwebClient }: AppProps) {
         </div>
       )}
 
-              <div className="main-content">
-          {/* Dashboard Navigation */}
-          <div className="dashboard-nav">
-            <button 
-              className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
-            >
-              📊 Dashboard
-            </button>
-            <button 
-              className={`nav-tab ${activeTab === 'register' ? 'active' : ''}`}
-              onClick={() => setActiveTab('register')}
-            >
-              📝 Register IP
-            </button>
-            <button 
-              className={`nav-tab ${activeTab === 'license' ? 'active' : ''}`}
-              onClick={() => setActiveTab('license')}
-            >
-              🎫 License Management
-            </button>
-            <button 
-              className={`nav-tab ${activeTab === 'revenue' ? 'active' : ''}`}
-              onClick={() => setActiveTab('revenue')}
-            >
-              💰 Revenue & Analytics
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          <div className="tab-content">
-            {/* Dashboard Tab */}
-            {activeTab === 'dashboard' && (
-              <IPPortfolio 
-                assets={ipAssets}
-                licenses={licenses}
-                metadata={parsedMetadata}
-                userAddress={account?.address}
-              />
-            )}
-
-            {/* Register IP Tab */}
-            {activeTab === 'register' && (
-              <section className="section section-wide">
-                <div className="section-header">
-                  <span className="section-icon">📝</span>
-                  <h2 className="section-title">Register IP Asset</h2>
-                      </div>
-          
-          <div className="form-grid">
-            {/* File Upload */}
-            <div 
-              className="file-upload-area"
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <input
-                type="file"
-                id="ip-file-upload"
-                className="file-upload-input"
-                onChange={handleFileChange}
-                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp3,.wav,.mp4"
-              />
-              <div className="file-upload-content">
-                <div className="file-upload-icon">📎</div>
-                <div className="file-upload-text">
-                  <strong>Click to upload</strong> or drag and drop
-                </div>
-                <div className="file-upload-hint">
-                  PDF, DOC, TXT, JPG, PNG, GIF, MP3, WAV, MP4 (max 50MB)
-                </div>
-              </div>
-            </div>
-
-            {filePreview && (
-              <div className="file-preview animate-slide-up">
-                {filePreview.startsWith('data:image') ? (
-                  <img 
-                    src={filePreview} 
-                    alt="File preview"
-                    className="file-preview-image"
-                  />
-                ) : (
-                  <div className="file-preview-image">📄</div>
-                )}
-                <div className="file-preview-info">
-                  <div className="file-preview-name">{ipFile?.name}</div>
-                  <div className="file-preview-size">
-                    {ipFile ? `${(ipFile.size / 1024 / 1024).toFixed(2)} MB` : ''}
-        </div>
-                </div>
-              </div>
-            )}
-
-            <button 
-              className="btn btn-secondary btn-full"
-              onClick={uploadToIPFS} 
-              disabled={!ipFile || loading}
-            >
-              {loading ? '⏳ Uploading...' : '🚀 Upload to IPFS'}
-            </button>
-            {/* IP Details Form */}
-            <div className="form-group">
-              <label className="form-label">🔗 IP Hash (IPFS)</label>
-              <input
-                type="text"
-                className="form-input"
-                value={ipHash}
-                onChange={(e) => setIpHash(e.target.value)}
-                placeholder="IPFS hash will appear after upload"
-                readOnly
-              />
+      <div className="main-content">
+        {/* Dashboard Navigation */}
+        <div className="dashboard-nav">
+          <button 
+            className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            📊 Dashboard
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'register' ? 'active' : ''}`}
+            onClick={() => setActiveTab('register')}
+          >
+            📝 Register IP
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'license' ? 'active' : ''}`}
+            onClick={() => setActiveTab('license')}
+          >
+            🎫 License Management
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'revenue' ? 'active' : ''}`}
+            onClick={() => setActiveTab('revenue')}
+          >
+            💰 Revenue & Analytics
+          </button>
         </div>
 
-            {ipHash && (
-              <div className="media-preview animate-scale-in">
-                <div className="media-container">
-                  {ipFile && ipFile.type.startsWith('image/') ? (
-                    <img 
-                      src={getIPFSGatewayURL(ipHash)} 
-                      alt="Uploaded media"
-                      className="media-image"
-                      onError={(e) => {
-                        const imgElement = e.target as HTMLImageElement;
-                        imgElement.style.display = 'none';
-                        const fallback = imgElement.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div className="media-fallback" style={{ display: ipFile?.type.startsWith('image/') ? 'none' : 'flex' }}>
-                    <div className="media-fallback-icon">📄</div>
-                    <p>Media Preview</p>
-                    <a href={getIPFSGatewayURL(ipHash)} target="_blank" rel="noopener noreferrer" className="media-link">
-                      🔗 View Media
-                    </a>
-        </div>
-      </div>
-              </div>
-            )}
+        {/* Tab Content */}
+        <div className="tab-content">
+          {/* Dashboard Tab */}
+          {activeTab === 'dashboard' && (
+            <IPPortfolio 
+              assets={ipAssets}
+              licenses={licenses}
+              metadata={parsedMetadata}
+              userAddress={account?.address}
+            />
+          )}
 
-            <div className="form-group-row">
-              <div className="form-group">
-                <label className="form-label">📝 Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={ipName}
-                  onChange={(e) => setIpName(e.target.value)}
-                  placeholder="Enter a name for your IP asset"
-                />
+          {/* Register IP Tab */}
+          {activeTab === 'register' && (
+            <section className="section section-wide">
+              <div className="section-header">
+                <span className="section-icon">📝</span>
+                <h2 className="section-title">Register IP Asset</h2>
               </div>
-              <div className="form-group">
-                <label className="form-label">🔒 Security</label>
-                <div className="checkbox-group">
-                  <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={isEncrypted}
-                    onChange={(e) => setIsEncrypted(e.target.checked)}
-                  />
-                  <label className="checkbox-label">Encrypted Content</label>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">📄 Description</label>
-        <textarea
-                className="form-input form-textarea"
-                value={ipDescription}
-                onChange={(e) => setIpDescription(e.target.value)}
-                placeholder="Describe your IP asset"
-                rows={3}
-              />
-            </div>
-
-            <button 
-              className="btn btn-primary btn-full"
-              onClick={registerIP} 
-              disabled={loading || !account?.address || !ipHash || !ipName.trim()}
-            >
-              {loading ? '⏳ Registering...' : '🚀 Register IP Asset'}
-            </button>
-          </div>
-        </section>
-            )}
-
-            {/* License Management Tab */}
-            {activeTab === 'license' && (
-              <section className="section">
-                <div className="section-header">
-                  <span className="section-icon">🎫</span>
-                  <h2 className="section-title">Mint License</h2>
-                </div>
-          
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">🎯 Select IP Asset</label>
-            <select
-                className="form-select"
-                value={selectedTokenId}
-                onChange={(e) => setSelectedTokenId(Number(e.target.value))}
-              >
-                {Array.from(ipAssets.keys()).map((id) => {
-                  const asset = ipAssets.get(id);
-                  const metadata = parsedMetadata.get(id) || { name: "Unknown" };
-                  return (
-                    <option key={id} value={id}>
-                      #{id} - {metadata.name || asset?.ipHash.substring(0, 10) || 'Unknown'}
-                    </option>
-                  );
-                })}
-            </select>
-            </div>
-            <div className="form-group-row">
-              <div className="form-group">
-                <label className="form-label">💰 Royalty (%)</label>
-            <input
-              type="number"
-                  className="form-input"
-                  value={royaltyPercentage}
-                  onChange={(e) => setRoyaltyPercentage(Number(e.target.value))}
-                  min="1"
-                  max="100"
-                  placeholder="10"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">⏰ Duration (seconds)</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={licenseDuration}
-                  onChange={(e) => setLicenseDuration(Number(e.target.value))}
-                  min="3600"
-                  placeholder="86400"
-                />
-              </div>
-            </div>
-
-            {/* License Terms */}
-            <div className="form-group">
-              <label className="form-label">⚙️ License Terms</label>
+              
               <div className="form-grid">
-                <div className="checkbox-group">
+                {/* File Upload */}
+                <div 
+                  className="file-upload-area"
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={commercialUse}
-                    onChange={(e) => setCommercialUse(e.target.checked)}
+                    type="file"
+                    id="ip-file-upload"
+                    className="file-upload-input"
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp3,.wav,.mp4"
                   />
-                  <label className="checkbox-label">Commercial Use Allowed</label>
-                </div>
-                <div className="checkbox-group">
-                  <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={commercialAttribution}
-                    onChange={(e) => setCommercialAttribution(e.target.checked)}
-                  />
-                  <label className="checkbox-label">Commercial Attribution</label>
-                </div>
-
-                <div className="checkbox-group">
-                  <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={derivativesAllowed}
-                    onChange={(e) => setDerivativesAllowed(e.target.checked)}
-                  />
-                  <label className="checkbox-label">Derivatives Allowed</label>
+                  <div className="file-upload-content">
+                    <div className="file-upload-icon">📎</div>
+                    <div className="file-upload-text">
+                      <strong>Click to upload</strong> or drag and drop
+                    </div>
+                    <div className="file-upload-hint">
+                      PDF, DOC, TXT, JPG, PNG, GIF, MP3, WAV, MP4 (max 50MB)
+                    </div>
+                  </div>
                 </div>
 
-                <div className="checkbox-group">
+                {filePreview && (
+                  <div className="file-preview animate-slide-up">
+                    {filePreview.startsWith('data:image') ? (
+                      <img 
+                        src={filePreview} 
+                        alt="File preview"
+                        className="file-preview-image"
+                      />
+                    ) : (
+                      <div className="file-preview-image">📄</div>
+                    )}
+                    <div className="file-preview-info">
+                      <div className="file-preview-name">{ipFile?.name}</div>
+                      <div className="file-preview-size">
+                        {ipFile ? `${(ipFile.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button 
+                  className="btn btn-secondary btn-full"
+                  onClick={uploadToIPFS} 
+                  disabled={!ipFile || loading}
+                >
+                  {loading ? '⏳ Uploading...' : '🚀 Upload to IPFS'}
+                </button>
+
+                {/* IP Details Form */}
+                <div className="form-group">
+                  <label className="form-label">🔗 IP Hash (IPFS)</label>
                   <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={derivativesAttribution}
-                    onChange={(e) => setDerivativesAttribution(e.target.checked)}
+                    type="text"
+                    className="form-input"
+                    value={ipHash}
+                    onChange={(e) => setIpHash(e.target.value)}
+                    placeholder="IPFS hash will appear after upload"
+                    readOnly
                   />
-                  <label className="checkbox-label">Derivatives Attribution</label>
                 </div>
 
-                <div className="checkbox-group">
-                  <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={derivativesApproval}
-                    onChange={(e) => setDerivativesApproval(e.target.checked)}
-                  />
-                  <label className="checkbox-label">Derivatives Approval Required</label>
-                </div>
+                {ipHash && (
+                  <div className="media-preview animate-scale-in">
+                    <div className="media-container">
+                      {ipFile && ipFile.type.startsWith('image/') ? (
+                        <img 
+                          src={getIPFSGatewayURL(ipHash)} 
+                          alt="Uploaded media"
+                          className="media-image"
+                          onError={(e) => {
+                            const imgElement = e.target as HTMLImageElement;
+                            imgElement.style.display = 'none';
+                            const fallback = imgElement.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className="media-fallback" style={{ display: ipFile?.type.startsWith('image/') ? 'none' : 'flex' }}>
+                        <div className="media-fallback-icon">📄</div>
+                        <p>Media Preview</p>
+                        <a href={getIPFSGatewayURL(ipHash)} target="_blank" rel="noopener noreferrer" className="media-link">
+                          🔗 View Media
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                <div className="checkbox-group">
-                  <input
-                    type="checkbox"
-                    className="checkbox-input"
-                    checked={derivativesReciprocal}
-                    onChange={(e) => setDerivativesReciprocal(e.target.checked)}
-                  />
-                  <label className="checkbox-label">Derivatives Reciprocal</label>
-                </div>
-              </div>
-            </div>
-
-            {/* Advanced Settings */}
-            <details className="form-group">
-              <summary className="form-label" style={{ cursor: 'pointer', fontWeight: 600 }}>
-                🔧 Advanced Settings
-              </summary>
-              <div className="form-grid" style={{ marginTop: '1rem' }}>
                 <div className="form-group-row">
                   <div className="form-group">
-                    <label className="form-label">💵 Commercial Rev Share (%)</label>
+                    <label className="form-label">📝 Name</label>
                     <input
-                      type="number"
+                      type="text"
                       className="form-input"
-                      value={commercialRevShare / 1000000}
-                      onChange={(e) => setCommercialRevShare(Number(e.target.value) * 1000000)}
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      placeholder="100"
+                      value={ipName}
+                      onChange={(e) => setIpName(e.target.value)}
+                      placeholder="Enter a name for your IP asset"
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">🏛️ Commercial Rev Ceiling</label>
+                    <label className="form-label">🔒 Security</label>
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        className="checkbox-input"
+                        checked={isEncrypted}
+                        onChange={(e) => setIsEncrypted(e.target.checked)}
+                      />
+                      <label className="checkbox-label">Encrypted Content</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">📄 Description</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    value={ipDescription}
+                    onChange={(e) => setIpDescription(e.target.value)}
+                    placeholder="Describe your IP asset"
+                    rows={3}
+                  />
+                </div>
+
+                <button 
+                  className="btn btn-primary btn-full"
+                  onClick={registerIP} 
+                  disabled={loading || !account?.address || !ipHash || !ipName.trim()}
+                >
+                  {loading ? '⏳ Registering...' : '🚀 Register IP Asset'}
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* License Management Tab */}
+          {activeTab === 'license' && (
+            <section className="section">
+              <div className="section-header">
+                <span className="section-icon">🎫</span>
+                <h2 className="section-title">Mint License</h2>
+              </div>
+              
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">🎯 Select IP Asset</label>
+                  <select
+                    className="form-select"
+                    value={selectedTokenId}
+                    onChange={(e) => setSelectedTokenId(Number(e.target.value))}
+                  >
+                    {Array.from(ipAssets.keys()).map((id) => {
+                      const asset = ipAssets.get(id);
+                      const metadata = parsedMetadata.get(id) || { name: "Unknown" };
+                      return (
+                        <option key={id} value={id}>
+                          #{id} - {metadata.name || asset?.ipHash.substring(0, 10) || 'Unknown'}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="form-group-row">
+                  <div className="form-group">
+                    <label className="form-label">💰 Royalty (%)</label>
                     <input
                       type="number"
                       className="form-input"
-                      value={commercialRevCeiling}
-                      onChange={(e) => setCommercialRevCeiling(Number(e.target.value))}
-                      min="0"
-                      placeholder="0"
+                      value={royaltyPercentage}
+                      onChange={(e) => setRoyaltyPercentage(Number(e.target.value))}
+                      min="1"
+                      max="100"
+                      placeholder="10"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">⏰ Duration (seconds)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={licenseDuration}
+                      onChange={(e) => setLicenseDuration(Number(e.target.value))}
+                      min="3600"
+                      placeholder="86400"
                     />
                   </div>
                 </div>
 
+                {/* License Terms */}
                 <div className="form-group">
-                  <label className="form-label">🔍 Commercializer Checker</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={commercializerChecker}
-                    onChange={(e) => setCommercializerChecker(e.target.value)}
-                    placeholder="0x0000000000000000000000000000000000000000"
-                  />
-                </div>
+                  <label className="form-label">⚙️ License Terms</label>
+                  <div className="form-grid">
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        className="checkbox-input"
+                        checked={commercialUse}
+                        onChange={(e) => setCommercialUse(e.target.checked)}
+                      />
+                      <label className="checkbox-label">Commercial Use Allowed</label>
+                    </div>
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        className="checkbox-input"
+                        checked={commercialAttribution}
+                        onChange={(e) => setCommercialAttribution(e.target.checked)}
+                      />
+                      <label className="checkbox-label">Commercial Attribution</label>
+                    </div>
 
-                <div className="form-group">
-                  <label className="form-label">📊 Derivative Rev Ceiling</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={derivativeRevCeiling}
-                    onChange={(e) => setDerivativeRevCeiling(Number(e.target.value))}
-                    min="0"
-                    placeholder="0"
-                  />
-                </div>
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        className="checkbox-input"
+                        checked={derivativesAllowed}
+                        onChange={(e) => setDerivativesAllowed(e.target.checked)}
+                      />
+                      <label className="checkbox-label">Derivatives Allowed</label>
+                    </div>
 
-                <div className="form-group">
-                  <label className="form-label">💱 License Currency</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={licenseCurrency}
-                    onChange={(e) => setLicenseCurrency(e.target.value)}
-                    placeholder="0x15140000000000000000000000000000000000000"
-                  />
-                </div>
-              </div>
-            </details>
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        className="checkbox-input"
+                        checked={derivativesAttribution}
+                        onChange={(e) => setDerivativesAttribution(e.target.checked)}
+                      />
+                      <label className="checkbox-label">Derivatives Attribution</label>
+                    </div>
 
-            <button 
-              className="btn btn-primary btn-full"
-              onClick={mintLicense} 
-              disabled={loading || !account?.address}
-            >
-              {loading ? '⏳ Minting...' : '🎫 Mint License'}
-            </button>
-          </div>
-        </section>
-            )}
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        className="checkbox-input"
+                        checked={derivativesApproval}
+                        onChange={(e) => setDerivativesApproval(e.target.checked)}
+                      />
+                      <label className="checkbox-label">Derivatives Approval Required</label>
+                    </div>
 
-            {/* Revenue & Analytics Tab */}
-            {activeTab === 'revenue' && (
-              <>
-                {/* Pay Revenue */}
-                <section className="section">
-                  <div className="section-header">
-                    <span className="section-icon">💳</span>
-                    <h2 className="section-title">Pay Revenue</h2>
+                    <div className="checkbox-group">
+                      <input
+                        type="checkbox"
+                        className="checkbox-input"
+                        checked={derivativesReciprocal}
+                        onChange={(e) => setDerivativesReciprocal(e.target.checked)}
+                      />
+                      <label className="checkbox-label">Derivatives Reciprocal</label>
+                    </div>
                   </div>
-          
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">🎯 Select IP Asset</label>
-              <select
-                className="form-select"
-                value={paymentTokenId}
-                onChange={(e) => setPaymentTokenId(Number(e.target.value))}
-              >
-                {Array.from(ipAssets.keys()).map((id) => {
-                  const asset = ipAssets.get(id);
-                  const metadata = parsedMetadata.get(id) || { name: "Unknown" };
-  return (
-                    <option key={id} value={id}>
-                      #{id} - {metadata.name || asset?.ipHash.substring(0, 10) || 'Unknown'}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">💰 Amount (XTZ)</label>
-              <input
-                type="number"
-                className="form-input"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                min="0.001"
-                step="0.001"
-                placeholder="0.001"
-            />
-          </div>
-            
-            <button 
-              className="btn btn-primary btn-full"
-              onClick={payRevenue} 
-              disabled={loading || !account?.address}
-            >
-              {loading ? '⏳ Processing...' : '💳 Pay Revenue'}
-            </button>
-          </div>
-        </section>
-
-        {/* Claim Royalties */}
-        <section className="section">
-          <div className="section-header">
-            <span className="section-icon">🏆</span>
-            <h2 className="section-title">Claim Royalties</h2>
-          </div>
-          
-          <div className="form-grid">
-            <div className="form-group">
-              <label className="form-label">🎯 Select IP Asset</label>
-              <select
-                className="form-select"
-                value={claimTokenId}
-                onChange={(e) => setClaimTokenId(Number(e.target.value))}
-              >
-                {Array.from(ipAssets.keys()).map((id) => {
-                  const asset = ipAssets.get(id);
-                  const metadata = parsedMetadata.get(id) || { name: "Unknown" };
-                  return (
-                    <option key={id} value={id}>
-                      #{id} - {metadata.name || asset?.ipHash.substring(0, 10) || 'Unknown'}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-            
-            <button 
-              className="btn btn-primary btn-full"
-              onClick={claimRoyalties} 
-              disabled={loading || !account?.address}
-            >
-              {loading ? '⏳ Claiming...' : '🏆 Claim Royalties'}
-            </button>
                 </div>
-                </section>
-              </>
-            )}
-          </div>
 
-          {/* IP Assets Display */}
-          <section className="section section-full">
+                {/* Advanced Settings */}
+                <details className="form-group">
+                  <summary className="form-label" style={{ cursor: 'pointer', fontWeight: 600 }}>
+                    🔧 Advanced Settings
+                  </summary>
+                  <div className="form-grid" style={{ marginTop: '1rem' }}>
+                    <div className="form-group-row">
+                      <div className="form-group">
+                        <label className="form-label">💵 Commercial Rev Share (%)</label>
+                        <input
+                          type="number"
+                          className="form-input"
+                          value={commercialRevShare / 1000000}
+                          onChange={(e) => setCommercialRevShare(Number(e.target.value) * 1000000)}
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          placeholder="100"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">🏛️ Commercial Rev Ceiling</label>
+                        <input
+                          type="number"
+                          className="form-input"
+                          value={commercialRevCeiling}
+                          onChange={(e) => setCommercialRevCeiling(Number(e.target.value))}
+                          min="0"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">🔍 Commercializer Checker</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={commercializerChecker}
+                        onChange={(e) => setCommercializerChecker(e.target.value)}
+                        placeholder="0x0000000000000000000000000000000000000000"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">📊 Derivative Rev Ceiling</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        value={derivativeRevCeiling}
+                        onChange={(e) => setDerivativeRevCeiling(Number(e.target.value))}
+                        min="0"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">💱 License Currency</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={licenseCurrency}
+                        onChange={(e) => setLicenseCurrency(e.target.value)}
+                        placeholder="0x15140000000000000000000000000000000000000"
+                      />
+                    </div>
+                  </div>
+                </details>
+
+                <button 
+                  className="btn btn-primary btn-full"
+                  onClick={mintLicense} 
+                  disabled={loading || !account?.address}
+                >
+                  {loading ? '⏳ Minting...' : '🎫 Mint License'}
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* Revenue & Analytics Tab */}
+          {activeTab === 'revenue' && (
+            <>
+              {/* Pay Revenue */}
+              <section className="section">
+                <div className="section-header">
+                  <span className="section-icon">💳</span>
+                  <h2 className="section-title">Pay Revenue</h2>
+                </div>
+                
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label className="form-label">🎯 Select IP Asset</label>
+                    <select
+                      className="form-select"
+                      value={paymentTokenId}
+                      onChange={(e) => setPaymentTokenId(Number(e.target.value))}
+                    >
+                      {Array.from(ipAssets.keys()).map((id) => {
+                        const asset = ipAssets.get(id);
+                        const metadata = parsedMetadata.get(id) || { name: "Unknown" };
+                        return (
+                          <option key={id} value={id}>
+                            #{id} - {metadata.name || asset?.ipHash.substring(0, 10) || 'Unknown'}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">💰 Amount (XTZ)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      min="0.001"
+                      step="0.001"
+                      placeholder="0.001"
+                    />
+                  </div>
+                  
+                  <button 
+                    className="btn btn-primary btn-full"
+                    onClick={payRevenue} 
+                    disabled={loading || !account?.address}
+                  >
+                    {loading ? '⏳ Processing...' : '💳 Pay Revenue'}
+                  </button>
+                </div>
+              </section>
+
+              {/* Claim Royalties */}
+              <section className="section">
+                <div className="section-header">
+                  <span className="section-icon">🏆</span>
+                  <h2 className="section-title">Claim Royalties</h2>
+                </div>
+                
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label className="form-label">🎯 Select IP Asset</label>
+                    <select
+                      className="form-select"
+                      value={claimTokenId}
+                      onChange={(e) => setClaimTokenId(Number(e.target.value))}
+                    >
+                      {Array.from(ipAssets.keys()).map((id) => {
+                        const asset = ipAssets.get(id);
+                        const metadata = parsedMetadata.get(id) || { name: "Unknown" };
+                        return (
+                          <option key={id} value={id}>
+                            #{id} - {metadata.name || asset?.ipHash.substring(0, 10) || 'Unknown'}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                  
+                  <button 
+                    className="btn btn-primary btn-full"
+                    onClick={claimRoyalties} 
+                    disabled={loading || !account?.address}
+                  >
+                    {loading ? '⏳ Claiming...' : '🏆 Claim Royalties'}
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
+        </div>
+
+        {/* IP Assets Display */}
+        <section className="section section-full">
           <div className="section-header">
             <span className="section-icon">🎨</span>
             <h2 className="section-title">Registered IP Assets</h2>
@@ -1730,7 +1640,7 @@ export default function App({ thirdwebClient }: AppProps) {
                     <div className="card-field">
                       <span className="card-field-label">Owner</span>
                       <span className="card-field-value address">{asset.owner.substring(0, 10)}...</span>
-                      </div>
+                    </div>
                     
                     <div className="card-field">
                       <span className="card-field-label">Description</span>
@@ -1789,18 +1699,18 @@ export default function App({ thirdwebClient }: AppProps) {
                     )}
                     {license.commercialUse && <span className="badge badge-info">💼 Commercial</span>}
                   </div>
-        </div>
+                </div>
 
                 <div className="card-body">
                   <div className="card-field">
                     <span className="card-field-label">Licensee</span>
                     <span className="card-field-value address">{license.licensee.substring(0, 10)}...</span>
-        </div>
+                  </div>
                   
                   <div className="card-field">
                     <span className="card-field-label">Royalty Rate</span>
                     <span className="card-field-value">💰 {Number(license.royaltyPercentage) / 100}%</span>
-      </div>
+                  </div>
 
                   <div className="card-field">
                     <span className="card-field-label">Duration</span>
@@ -1845,4 +1755,4 @@ export default function App({ thirdwebClient }: AppProps) {
       </div>
     </div>
   );
-}
+} 

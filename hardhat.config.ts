@@ -17,26 +17,10 @@ const config: HardhatUserConfig = {
   },
 
   networks: {
-    local: {
-      url: "http://127.0.0.1:7546",
-      chainId: 298,
-      accounts: [process.env.ECDSA_PRIVATE_KEY_LOCAL || ''],
-      gas: "auto",
-      gasPrice: "auto",
-      gasMultiplier: 3
-    },
     testnet: {
       url: "https://testnet.hashio.io/api",
       chainId: 296,
-      accounts: [process.env.ECDSA_PRIVATE_KEY_TEST || ''],
-      gas: "auto",
-      gasPrice: "auto",
-      gasMultiplier: 3
-    },
-    mainnet: {
-      url: "https://mainnet.hashio.io/api",
-      chainId: 295,
-      accounts: [process.env.ECDSA_PRIVATE_KEY_MAIN || ''],
+      accounts: ['0x5725c495845c012025f9dd3a9941cb1726c8bf238454d45360c461e4b272f7ca'],
       gas: "auto",
       gasPrice: "auto",
       gasMultiplier: 3

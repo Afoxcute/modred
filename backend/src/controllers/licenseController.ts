@@ -40,7 +40,8 @@ const handleLicenseMinting = async (req: Request, res: Response) => {
             return res.status(200).json(convertBigIntsToStrings(responseData));
         } else {
             return res.status(500).json({
-                error: result.message
+                error: result.message,
+                details: 'License minting failed on Hedera'
             });
         }
     } catch (err) {

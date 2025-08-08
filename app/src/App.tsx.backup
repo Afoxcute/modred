@@ -7,7 +7,6 @@ import { IPPortfolio } from "./components/IPPortfolio";
 import "./components/IPPortfolio.css";
 
 import {
-  defineChain,
   getContract,
   prepareContractCall,
   readContract,
@@ -18,7 +17,23 @@ import {
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { createWallet, inAppWallet } from "thirdweb/wallets";
 import { parseEther, formatEther } from "viem";
-import { etherlinkTestnet } from "viem/chains";
+import { ModredIP__factory } from "./typechain-types/factories/ModredIP__factory";
+
+// Define Hedera testnet chain for thirdweb
+const hederaTestnet = {
+  id: 296,
+  name: 'Hedera Testnet',
+  nativeCurrency: {
+    name: 'HBAR',
+    symbol: 'HBAR',
+    decimals: 18,
+  },
+  rpc: 'https://testnet.hashio.io/api',
+  blockExplorers: [{
+    name: 'Hedera Testnet Explorer',
+    url: 'https://testnet.hashscan.io',
+  }],
+};
 import CONTRACT_ADDRESS_JSON from "./deployed_addresses.json";
 
 // Backend API configuration
@@ -248,24 +263,67 @@ const wallets = [
   createWallet("global.safe"),
 ];
 
-// ModredIP Contract ABI (simplified for the functions we need)
-const MODRED_IP_ABI = [
+// ModredIP Contract ABI (replaced with typechain types)
+// const MODRED_IP_ABI = [
+  {
+    inputs: [
+      { name: "ipHash", type: "string" },
+      { name: "metadata", type: "string" },
+      { name: "tokenUriString", type: "string" }
+    ],
+    name: "registerIP",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
   {
     inputs: [
       { name: "tokenId", type: "uint256" }
     ],
     name: "getIPAsset",
     outputs: [
-      { name: "owner", type: "address" },
-      { name: "ipHash", type: "string" },
-      { name: "metadata", type: "string" },
-      { name: "isEncrypted", type: "bool" },
-      { name: "isDisputed", type: "bool" },
-      { name: "registrationDate", type: "uint256" },
-      { name: "totalRevenue", type: "uint256" },
-      { name: "royaltyTokens", type: "uint256" }
+      {
+        components: [
+          { name: "tokenId", type: "uint256" },
+          { name: "owner", type: "address" },
+          { name: "ipHash", type: "string" },
+          { name: "metadata", type: "string" },
+          { name: "isActive", type: "bool" },
+          { name: "isDisputed", type: "bool" },
+          { name: "registrationDate", type: "uint256" },
+          { name: "totalRevenue", type: "uint256" },
+          { name: "royaltyTokens", type: "uint256" },
+          { name: "tokenBoundAccount", type: "address" }
+        ],
+        name: "",
+        type: "tuple"
+      }
     ],
     stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "owner", type: "address" }
+    ],
+    name: "getOwnerIPs",
+    outputs: [{ name: "", type: "uint256[]" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "ipTokenId", type: "uint256" },
+      { name: "commercialUse", type: "bool" },
+      { name: "derivativeWorks", type: "bool" },
+      { name: "exclusive", type: "bool" },
+      { name: "revenueShare", type: "uint256" },
+      { name: "duration", type: "uint256" },
+      { name: "terms", type: "string" }
+    ],
+    name: "mintLicense",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "nonpayable",
     type: "function"
   },
   {
@@ -274,59 +332,31 @@ const MODRED_IP_ABI = [
     ],
     name: "getLicense",
     outputs: [
-      { name: "licensee", type: "address" },
-      { name: "tokenId", type: "uint256" },
-      { name: "royaltyPercentage", type: "uint256" },
-      { name: "duration", type: "uint256" },
-      { name: "startDate", type: "uint256" },
-      { name: "isActive", type: "bool" },
-      { name: "commercialUse", type: "bool" },
-      { name: "terms", type: "string" }
+      {
+        components: [
+          { name: "licenseId", type: "uint256" },
+          { name: "ipTokenId", type: "uint256" },
+          { name: "licensee", type: "address" },
+          { name: "commercialUse", type: "bool" },
+          { name: "derivativeWorks", type: "bool" },
+          { name: "exclusive", type: "bool" },
+          { name: "revenueShare", type: "uint256" },
+          { name: "duration", type: "uint256" },
+          { name: "issueDate", type: "uint256" },
+          { name: "isActive", type: "bool" },
+          { name: "terms", type: "string" }
+        ],
+        name: "",
+        type: "tuple"
+      }
     ],
     stateMutability: "view",
     type: "function"
   },
   {
-    inputs: [],
-    name: "nextTokenId",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [],
-    name: "nextLicenseId",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
     inputs: [
-      { name: "ipHash", type: "string" },
-      { name: "metadata", type: "string" },
-      { name: "isEncrypted", type: "bool" }
-    ],
-    name: "registerIP",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "tokenId", type: "uint256" },
-      { name: "royaltyPercentage", type: "uint256" },
-      { name: "duration", type: "uint256" },
-      { name: "commercialUse", type: "bool" },
-      { name: "terms", type: "string" }
-    ],
-    name: "mintLicense",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "tokenId", type: "uint256" }
+      { name: "ipTokenId", type: "uint256" },
+      { name: "description", type: "string" }
     ],
     name: "payRevenue",
     outputs: [],
@@ -335,11 +365,38 @@ const MODRED_IP_ABI = [
   },
   {
     inputs: [
-      { name: "tokenId", type: "uint256" }
+      { name: "ipTokenId", type: "uint256" }
     ],
     name: "claimRoyalties",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "tokenId", type: "uint256" }
+    ],
+    name: "tokenURI",
+    outputs: [{ name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "tokenId", type: "uint256" }
+    ],
+    name: "ownerOf",
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [
+      { name: "owner", type: "address" }
+    ],
+    name: "balanceOf",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
     type: "function"
   }
 ] as const;
@@ -647,47 +704,51 @@ export default function App({ thirdwebClient }: AppProps) {
     try {
       setLoading(true);
       const contract = getContract({
-        abi: MODRED_IP_ABI,
-          client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
+        abi: ModredIP__factory.abi,
+        client: thirdwebClient,
+        chain: hederaTestnet,
         address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
       });
 
-      // Get next token ID
-      const nextId = await readContract({
+      // For now, let's use a simpler approach - check the nextTokenId and iterate backwards
+      const nextTokenId = await readContract({
         contract,
         method: "nextTokenId",
         params: [],
       });
-      const nextTokenIdNum = Number(nextId);
 
-      // Get next license ID
-      const nextLicenseId = await readContract({
-        contract,
-        method: "nextLicenseId",
-        params: [],
-      });
-      const nextLicenseIdNum = Number(nextLicenseId);
-
-      // Load IP assets
+      // Load IP assets by checking each token ID
       const newIpAssets = new Map<number, IPAsset>();
-      for (let i = 1; i < nextTokenIdNum; i++) {
+      for (let tokenId = 0; tokenId < Number(nextTokenId); tokenId++) {
         try {
-          const ipAsset = await readContract({
+          // Check if the token is owned by the current user
+          const owner = await readContract({
             contract,
-            method: "getIPAsset",
-            params: [BigInt(i)],
+            method: "ownerOf",
+            params: [BigInt(tokenId)],
           });
-          newIpAssets.set(i, {
-            owner: ipAsset[0],
-            ipHash: ipAsset[1],
-            metadata: ipAsset[2],
-            isEncrypted: ipAsset[3],
-            isDisputed: ipAsset[4],
-            registrationDate: ipAsset[5],
-            totalRevenue: ipAsset[6],
-            royaltyTokens: ipAsset[7],
-          });
+
+          if (owner.toLowerCase() === account.address.toLowerCase()) {
+            const ipAsset = await readContract({
+              contract,
+              method: "getIPAsset",
+              params: [BigInt(tokenId)],
+            });
+
+            // Parse the tuple result
+            const [owner, ipHash, metadata, isEncrypted, isDisputed, registrationDate, totalRevenue, royaltyTokens] = ipAsset;
+
+            newIpAssets.set(tokenId, {
+              owner,
+              ipHash,
+              metadata,
+              isEncrypted,
+              isDisputed,
+              registrationDate,
+              totalRevenue,
+              royaltyTokens,
+            });
+          }
         } catch (error) {
           // Token doesn't exist, skip
         }
@@ -710,29 +771,9 @@ export default function App({ thirdwebClient }: AppProps) {
       }
       setParsedMetadata(newParsedMetadata);
 
-      // Load licenses
+      // Load licenses (simplified for now - we'll need to track license IDs)
       const newLicenses = new Map<number, License>();
-      for (let i = 1; i < nextLicenseIdNum; i++) {
-        try {
-          const license = await readContract({
-            contract,
-            method: "getLicense",
-            params: [BigInt(i)],
-          });
-          newLicenses.set(i, {
-            licensee: license[0],
-            tokenId: license[1],
-            royaltyPercentage: license[2],
-            duration: license[3],
-            startDate: license[4],
-            isActive: license[5],
-            commercialUse: license[6],
-            terms: license[7],
-          });
-        } catch (error) {
-          // License doesn't exist, skip
-        }
-      }
+      // For now, we'll skip license loading until we implement proper license tracking
       setLicenses(newLicenses);
 
     } catch (error) {
@@ -813,8 +854,8 @@ export default function App({ thirdwebClient }: AppProps) {
         file_extension: ipFile?.name?.split('.').pop() || 'unknown',
         upload_timestamp: new Date().toISOString(),
         // Blockchain metadata
-        network: 'etherlink',
-        chain_id: '128123',
+        network: 'hedera',
+        chain_id: '296',
         contract_address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
         // Infringement detection metadata
         monitoring_enabled: true,
@@ -844,35 +885,69 @@ export default function App({ thirdwebClient }: AppProps) {
       //   ]
       // };
 
-      // Call backend API
-      const response = await fetch(`${BACKEND_URL}/api/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ipHash: ipHash,
-          metadata: JSON.stringify(ipMetadata),
-          isEncrypted: isEncrypted,
-          modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"]
-        })
+      // Call smart contract directly
+      const contract = getContract({
+        abi: ModredIP__factory.abi,
+        client: thirdwebClient,
+        chain: hederaTestnet,
+        address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to register IP');
-      }
+      const preparedCall = await prepareContractCall({
+        contract,
+        method: "registerIP",
+        params: [ipHash, JSON.stringify(ipMetadata), false], // isEncrypted = false
+      });
 
-      const result = await response.json();
-      console.log('IP Registration successful:', result);
+      const transaction = await sendTransaction({
+        transaction: preparedCall,
+        account: account,
+      });
+
+      const receipt = await waitForReceipt({
+        client: thirdwebClient,
+        chain: hederaTestnet,
+        transactionHash: transaction.transactionHash,
+      });
+
+      // Get the token ID from the contract
+      const tokenId = await readContract({
+        contract,
+        method: "nextTokenId",
+        params: [],
+      }) - 1n; // The newly registered token
+
+      // Register with backend for Yakoa monitoring
+      try {
+        const backendResponse = await fetch(`${BACKEND_URL}/api/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ipHash,
+            metadata: JSON.stringify(ipMetadata),
+            isEncrypted: false,
+            modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+          }),
+        });
+
+        if (backendResponse.ok) {
+          const backendResult = await backendResponse.json();
+          console.log("Backend registration successful:", backendResult);
+        }
+      } catch (backendError) {
+        console.warn("Backend registration failed:", backendError);
+        // Don't fail the whole operation if backend fails
+      }
 
       // Show success notification
       notifySuccess('IP Asset Registered', 
-        `Successfully registered IP asset!\nTransaction: ${result.etherlink.txHash}\nIP Asset ID: ${result.etherlink.ipAssetId}`,
+        `Successfully registered IP asset!\nToken ID: ${tokenId}\nTransaction: ${transaction.transactionHash}\nIP Asset ID: ${ipHash}`,
         {
           action: {
             label: 'View Transaction',
-            onClick: () => window.open(`https://testnet.explorer.etherlink.com/tx/${result.etherlink.txHash}`, '_blank')
+            onClick: () => window.open(`https://testnet.hashscan.io/tx/${transaction.transactionHash}`, '_blank')
           }
         }
       );
@@ -896,7 +971,7 @@ export default function App({ thirdwebClient }: AppProps) {
     }
   };
 
-  // Mint License using backend API
+  // Mint License using smart contract
   const mintLicense = async () => {
     if (!account?.address || !selectedTokenId) {
       notifyError("Missing Required Fields", "Please fill in all required fields");
@@ -906,60 +981,67 @@ export default function App({ thirdwebClient }: AppProps) {
     try {
       setLoading(true);
 
-
-      // Prepare license terms for backend
-      const licenseTerms = {
-        tokenId: selectedTokenId,
-        royaltyPercentage: royaltyPercentage,
-        duration: licenseDuration,
-        commercialUse: commercialUse,
-        terms: JSON.stringify({
-          transferable: true,
-          commercialAttribution: commercialAttribution,
-          commercializerChecker: commercializerChecker,
-          commercializerCheckerData: commercializerCheckerData,
-          commercialRevShare: commercialRevShare,
-          commercialRevCeiling: commercialRevCeiling,
-          derivativesAllowed: derivativesAllowed,
-          derivativesAttribution: derivativesAttribution,
-          derivativesApproval: derivativesApproval,
-          derivativesReciprocal: derivativesReciprocal,
-          derivativeRevCeiling: derivativeRevCeiling,
-          currency: licenseCurrency
-        })
-      };
-
-      // Call backend API
-      const response = await fetch(`${BACKEND_URL}/api/license/mint`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tokenId: selectedTokenId,
-          royaltyPercentage: royaltyPercentage,
-          duration: licenseDuration,
-          commercialUse: commercialUse,
-          terms: licenseTerms.terms,
-          modredIpContractAddress: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"]
-        })
+      // Prepare license terms
+      const licenseTerms = JSON.stringify({
+        transferable: true,
+        commercialAttribution: commercialAttribution,
+        commercializerChecker: commercializerChecker,
+        commercializerCheckerData: commercializerCheckerData,
+        commercialRevShare: commercialRevShare,
+        commercialRevCeiling: commercialRevCeiling,
+        derivativesAllowed: derivativesAllowed,
+        derivativesAttribution: derivativesAttribution,
+        derivativesApproval: derivativesApproval,
+        derivativesReciprocal: derivativesReciprocal,
+        derivativeRevCeiling: derivativeRevCeiling,
+        currency: licenseCurrency
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to mint license');
-      }
+      // Call smart contract directly
+      const contract = getContract({
+        abi: ModredIP__factory.abi,
+        client: thirdwebClient,
+        chain: hederaTestnet,
+        address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+      });
 
-      const result = await response.json();
-      console.log('License minting successful:', result);
+      const preparedCall = await prepareContractCall({
+        contract,
+        method: "mintLicense",
+        params: [
+          BigInt(selectedTokenId),
+          BigInt(royaltyPercentage),
+          BigInt(licenseDuration),
+          commercialUse,
+          licenseTerms
+        ],
+      });
+
+      const transaction = await sendTransaction({
+        transaction: preparedCall,
+        account: account,
+      });
+
+      const receipt = await waitForReceipt({
+        client: thirdwebClient,
+        chain: hederaTestnet,
+        transactionHash: transaction.transactionHash,
+      });
+
+      // Get the license ID
+      const licenseId = await readContract({
+        contract,
+        method: "nextLicenseId",
+        params: [],
+      }) - 1n;
 
       // Show success notification
       notifySuccess('License Minted', 
-        `Successfully minted license!\nTransaction: ${result.data.txHash}`,
+        `Successfully minted license!\nLicense ID: ${licenseId}\nTransaction: ${transaction.transactionHash}`,
         {
           action: {
             label: 'View Transaction',
-            onClick: () => window.open(`https://testnet.explorer.etherlink.com/tx/${result.data.txHash}`, '_blank')
+            onClick: () => window.open(`https://testnet.hashscan.io/tx/${transaction.transactionHash}`, '_blank')
           }
         }
       );
@@ -1001,13 +1083,13 @@ export default function App({ thirdwebClient }: AppProps) {
 
     try {
       setLoading(true);
-      notifyInfo('Processing Payment', `Paying ${paymentAmount} XTZ in revenue...`);
+      notifyInfo('Processing Payment', `Paying ${paymentAmount} HBAR in revenue...`);
 
         const contract = getContract({
-        abi: MODRED_IP_ABI,
+          abi: ModredIP__factory.abi,
           client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
-        address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+          chain: hederaTestnet,
+          address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
         });
 
       const preparedCall = await prepareContractCall({
@@ -1024,12 +1106,12 @@ export default function App({ thirdwebClient }: AppProps) {
 
       await waitForReceipt({
           client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
+          chain: hederaTestnet,
           transactionHash: transaction.transactionHash,
         });
 
       // Show success notification
-      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} XTZ in revenue!`);
+      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} HBAR in revenue!`);
 
       // Reset form
       setPaymentAmount("");
@@ -1058,10 +1140,10 @@ export default function App({ thirdwebClient }: AppProps) {
       notifyInfo('Claiming Royalties', 'Processing royalty claim...');
 
         const contract = getContract({
-        abi: MODRED_IP_ABI,
+          abi: ModredIP__factory.abi,
           client: thirdwebClient,
-          chain: defineChain(etherlinkTestnet.id),
-        address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
+          chain: hederaTestnet,
+          address: CONTRACT_ADDRESS_JSON["ModredIPModule#ModredIP"],
         });
 
       const preparedCall = await prepareContractCall({
@@ -1077,7 +1159,7 @@ export default function App({ thirdwebClient }: AppProps) {
 
       await waitForReceipt({
         client: thirdwebClient,
-        chain: defineChain(etherlinkTestnet.id),
+        chain: hederaTestnet,
         transactionHash: transaction.transactionHash,
       });
 
@@ -1117,7 +1199,7 @@ export default function App({ thirdwebClient }: AppProps) {
             <ConnectButton
               client={thirdwebClient}
               wallets={wallets}
-              chain={defineChain(etherlinkTestnet.id)}
+              chain={hederaTestnet}
             />
           </div>
         </div>

@@ -25,7 +25,7 @@ export const registerIP = async (req: any, res: any) => {
       ipAssetId,
       blockNumber,
       explorerUrl
-    } = await registerIpWithHedera(ipHash, metadata, isEncrypted, modredIpContractAddress as Address);
+    } = await registerIpWithHedera(ipHash, metadata, "", modredIpContractAddress as Address);
     console.log("✅ Hedera registration successful:", {
       txHash,
       ipAssetId,

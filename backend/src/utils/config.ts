@@ -1,9 +1,6 @@
-import { Chain, Address, createPublicClient, http, createWalletClient } from 'viem'
+import 'dotenv/config'
+import { Chain, Address, createPublicClient, createWalletClient, http, WalletClient } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import dotenv from 'dotenv'
-
-// Load environment variables
-dotenv.config()
 
 // Hedera testnet configuration
 const hederaTestnet: Chain = {
@@ -47,16 +44,16 @@ const networkConfig: NetworkConfig = {
 
 // Helper functions
 const validateEnvironmentVars = () => {
-    if (!process.env.WALLET_PRIVATE_KEY) {
-        console.warn('WALLET_PRIVATE_KEY not found in .env file. Some features may not work.')
-        console.log('Please create a .env file in the backend directory with:')
-        console.log('WALLET_PRIVATE_KEY=0x<your_64_character_private_key>')
-        return false
+    if (!process.env.WALLET_PRIVATE_KEY && !process.env.ECDSA_PRIVATE_KEY_TEST) {
+        throw new Error('WALLET_PRIVATE_KEY or ECDSA_PRIVATE_KEY_TEST is required in .env file')
     }
-    return true
 }
 
-const hasValidConfig = validateEnvironmentVars()
+validateEnvironmentVars()
+
+// Create account from private key
+const privateKey = (process.env.WALLET_PRIVATE_KEY || process.env.ECDSA_PRIVATE_KEY_TEST) as `0x${string}`;
+export const account = privateKeyToAccount(privateKey);
 
 export const networkInfo = {
     ...networkConfig,
@@ -69,16 +66,10 @@ const baseConfig = {
 } as const
 
 export const publicClient = createPublicClient(baseConfig)
-
-// Create account from private key (only if private key is provided and valid)
-export const account = (hasValidConfig && process.env.WALLET_PRIVATE_KEY && process.env.WALLET_PRIVATE_KEY.length === 66)
-    ? privateKeyToAccount(process.env.WALLET_PRIVATE_KEY as `0x${string}`)
-    : null
-
-// Create wallet client
-export const walletClient = createWalletClient({
-    ...baseConfig,
-    account: account || undefined,
+export const walletClient: WalletClient = createWalletClient({
+    chain: networkInfo.chain,
+    transport: http(networkInfo.rpcProviderUrl),
+    account,
 })
 
 // Export constants

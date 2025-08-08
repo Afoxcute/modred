@@ -1,0 +1,8 @@
+{
+  "ModredIPModule#MockERC6551Account": "0x98DbA1d179b013342C2f63Ef551Cf72de4bb64e3",
+  "ModredIPModule#MockERC6551Registry": "0x827f01e7c3111cbB7b690E12B365eC0E14b144f6",
+  "ModredIPModule#ModredIP": "0xd4DE5d9DC3fFd4c728dE13aaE57C74628cd441b5",
+  "ModredIPDeployModule#MockERC6551Account": "0x62F2DbCb28639e6172aDbbFa93f02f77F7696825",
+  "ModredIPDeployModule#MockERC6551Registry": "0x067fda4FcaaDAa37552e5B146d8bC441ae4B1351",
+  "ModredIPDeployModule#ModredIP": "0xe3Cf8C99E10C1a7138520391bef6dddC61Aa0b91"
+}
