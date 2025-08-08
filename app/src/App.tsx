@@ -188,14 +188,20 @@ const getIPFSGatewayURL = (url: string): string => {
 // Parse metadata to extract name and description
 const parseMetadata = async (metadataUri: string) => {
   try {
+    console.log('Parsing metadata from URI:', metadataUri);
+    
     // If metadata is a direct JSON string, parse it
     if (metadataUri.startsWith('{')) {
-      return JSON.parse(metadataUri);
+      const metadata = JSON.parse(metadataUri);
+      console.log('Parsed direct JSON metadata:', metadata);
+      return metadata;
     }
     
     // If it's an IPFS URI, fetch it
     if (metadataUri.startsWith('ipfs://')) {
       const gatewayUrl = getIPFSGatewayURL(metadataUri);
+      console.log('Fetching metadata from gateway:', gatewayUrl);
+      
       const response = await fetch(gatewayUrl);
       
       if (!response.ok) {
@@ -203,11 +209,13 @@ const parseMetadata = async (metadataUri: string) => {
       }
       
       const metadata = await response.json();
+      console.log('Fetched IPFS metadata:', metadata);
       return metadata;
     }
     
     // If it's already a gateway URL, fetch it
     if (metadataUri.includes('gateway.pinata.cloud')) {
+      console.log('Fetching metadata from gateway URL:', metadataUri);
       const response = await fetch(metadataUri);
       
       if (!response.ok) {
@@ -215,19 +223,37 @@ const parseMetadata = async (metadataUri: string) => {
       }
       
       const metadata = await response.json();
+      console.log('Fetched gateway metadata:', metadata);
+      return metadata;
+    }
+    
+    // Try to fetch as a regular URL
+    if (metadataUri.startsWith('http')) {
+      console.log('Fetching metadata from URL:', metadataUri);
+      const response = await fetch(metadataUri);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch metadata: ${response.statusText}`);
+      }
+      
+      const metadata = await response.json();
+      console.log('Fetched URL metadata:', metadata);
       return metadata;
     }
     
     // Default fallback
+    console.log('Using fallback metadata for URI:', metadataUri);
     return {
       name: "Unknown",
-      description: "No description available"
+      description: "No description available",
+      image: metadataUri // Use the URI as image if it's not JSON
     };
   } catch (error) {
     console.error('Error parsing metadata:', error);
     return {
       name: "Unknown",
-      description: "No description available"
+      description: "No description available",
+      image: metadataUri // Use the URI as image as fallback
     };
   }
 }; 
@@ -387,37 +413,48 @@ const EnhancedAssetPreview: React.FC<{
 }> = ({ assetId, asset, metadata, mediaUrl }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchImageFromMetadata = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
+        console.log('EnhancedAssetPreview - Asset ID:', assetId);
+        console.log('EnhancedAssetPreview - Metadata:', metadata);
+        console.log('EnhancedAssetPreview - Asset IP Hash:', asset.ipHash);
         
         // Priority 1: Check if metadata has image field
         if (metadata?.image) {
           let imageSource = metadata.image;
+          console.log('Using metadata image:', imageSource);
           
           // Convert IPFS URLs to gateway URLs
           if (imageSource.startsWith('ipfs://')) {
             imageSource = `https://gateway.pinata.cloud/ipfs/${imageSource.replace('ipfs://', '')}`;
+            console.log('Converted IPFS to gateway URL:', imageSource);
           }
           
           setImageUrl(imageSource);
         } 
-        // Priority 2: Try the asset's ipHash directly
+        // Priority 2: Try the asset's ipHash directly (for original file)
         else if (asset.ipHash) {
           let gatewayUrl = asset.ipHash;
           if (gatewayUrl.startsWith('ipfs://')) {
             gatewayUrl = `https://gateway.pinata.cloud/ipfs/${gatewayUrl.replace('ipfs://', '')}`;
           }
+          console.log('Using asset IP hash as image:', gatewayUrl);
           setImageUrl(gatewayUrl);
         }
         // Priority 3: Use mediaUrl as fallback
         else {
+          console.log('Using mediaUrl as fallback:', mediaUrl);
           setImageUrl(mediaUrl);
         }
       } catch (error) {
         console.error('Error fetching image from metadata:', error);
+        setError('Failed to load media');
         setImageUrl(mediaUrl);
       } finally {
         setLoading(false);
@@ -425,12 +462,25 @@ const EnhancedAssetPreview: React.FC<{
     };
 
     fetchImageFromMetadata();
-  }, [metadata, asset.ipHash, mediaUrl]);
+  }, [metadata, asset.ipHash, mediaUrl, assetId]);
 
   if (loading) {
     return (
       <div className="preview-skeleton">
         <div className="skeleton skeleton-image"></div>
+        <div className="skeleton-text">Loading media...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="media-fallback">
+        <div className="media-fallback-icon">⚠️</div>
+        <p>{error}</p>
+        <a href={imageUrl || mediaUrl} target="_blank" rel="noopener noreferrer" className="media-link">
+          🔗 View Media
+        </a>
       </div>
     );
   }
@@ -443,6 +493,7 @@ const EnhancedAssetPreview: React.FC<{
           alt={metadata?.name || `IP Asset ${assetId}`}
           className="media-image"
           onError={(e) => {
+            console.log('Image failed to load:', imageUrl);
             const imgElement = e.target as HTMLImageElement;
             imgElement.style.display = 'none';
             const fallback = imgElement.nextElementSibling as HTMLElement;
@@ -704,18 +755,25 @@ export default function App({ thirdwebClient }: AppProps) {
 
       // Parse metadata for all IP assets
       const newParsedMetadata = new Map<number, any>();
+      console.log('Starting metadata parsing for', newIpAssets.size, 'IP assets');
+      
       for (const [id, asset] of newIpAssets.entries()) {
         try {
+          console.log(`Parsing metadata for token ${id}:`, asset.metadata);
           const metadata = await parseMetadata(asset.metadata);
+          console.log(`Successfully parsed metadata for token ${id}:`, metadata);
           newParsedMetadata.set(id, metadata);
         } catch (error) {
           console.error(`Error parsing metadata for token ${id}:`, error);
           newParsedMetadata.set(id, {
             name: "Unknown",
-            description: "No description available"
+            description: "No description available",
+            image: asset.ipHash // Use the IP hash as fallback image
           });
         }
       }
+      
+      console.log('Completed metadata parsing. Parsed metadata:', newParsedMetadata);
       setParsedMetadata(newParsedMetadata);
 
       // Load licenses
@@ -754,6 +812,24 @@ export default function App({ thirdwebClient }: AppProps) {
   useEffect(() => {
     loadContractData();
   }, [account?.address]);
+
+  // Debug function to test IPFS metadata fetching
+  const testIPFSMetadata = async (ipfsUri: string) => {
+    try {
+      console.log('Testing IPFS metadata fetch for:', ipfsUri);
+      const metadata = await parseMetadata(ipfsUri);
+      console.log('Test result:', metadata);
+      return metadata;
+    } catch (error) {
+      console.error('Test failed:', error);
+      return null;
+    }
+  };
+
+  // Expose test function globally for debugging
+  if (typeof window !== 'undefined') {
+    (window as any).testIPFSMetadata = testIPFSMetadata;
+  }
 
   // Create standardized NFT metadata
   const createNFTMetadata = async (ipHash: string, name: string, description: string, isEncrypted: boolean) => {
@@ -1602,12 +1678,26 @@ export default function App({ thirdwebClient }: AppProps) {
           <div className="section-header">
             <span className="section-icon">🎨</span>
             <h2 className="section-title">Registered IP Assets</h2>
+            <button 
+              className="btn btn-secondary"
+              onClick={loadContractData}
+              disabled={loading}
+              style={{ marginLeft: 'auto' }}
+            >
+              {loading ? '⏳ Loading...' : '🔄 Refresh'}
+            </button>
           </div>
           
           <div className="grid grid-3">
             {Array.from(ipAssets.entries()).map(([id, asset]) => {
               const metadata = parsedMetadata.get(id) || { name: "Unknown", description: "No description available" };
               const mediaUrl = getIPFSGatewayURL(asset.ipHash);
+              
+              console.log(`Rendering IP Asset ${id}:`, {
+                asset,
+                metadata,
+                mediaUrl
+              });
               
               return (
                 <div key={id} className="card hover-lift animate-fade-in">
@@ -1661,6 +1751,20 @@ export default function App({ thirdwebClient }: AppProps) {
                       <span className="card-field-label">Royalty Tokens</span>
                       <span className="card-field-value">🎯 {Number(asset.royaltyTokens) / 100}%</span>
                     </div>
+                    
+                    {/* Debug information - can be removed in production */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <details className="card-field">
+                        <summary className="card-field-label" style={{ cursor: 'pointer' }}>
+                          🔧 Debug Info
+                        </summary>
+                        <div className="card-field-value" style={{ fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                          <div><strong>Raw Metadata:</strong> {asset.metadata}</div>
+                          <div><strong>IP Hash:</strong> {asset.ipHash}</div>
+                          <div><strong>Parsed Metadata:</strong> {JSON.stringify(metadata, null, 2)}</div>
+                        </div>
+                      </details>
+                    )}
                   </div>
                 </div>
               );
