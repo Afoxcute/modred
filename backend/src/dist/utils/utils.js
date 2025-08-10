@@ -12,7 +12,7 @@ const viem_1 = require("viem");
 const dotenv_1 = __importDefault(require("dotenv"));
 const config_1 = require("./config");
 dotenv_1.default.config();
-// Use native XTZ token as WIP_TOKEN_ADDRESS
+// Use native HBAR token as WIP_TOKEN_ADDRESS
 exports.WIP_TOKEN_ADDRESS = config_1.NATIVE_TOKEN_ADDRESS;
 // Export contract addresses with appropriate defaults based on network
 exports.NFTContractAddress = process.env.NFT_CONTRACT_ADDRESS || viem_1.zeroAddress;

@@ -1062,7 +1062,7 @@ export default function App({ thirdwebClient }: AppProps) {
 
     try {
       setLoading(true);
-      notifyInfo('Processing Payment', `Paying ${paymentAmount} XTZ in revenue...`);
+      notifyInfo('Processing Payment', `Paying ${paymentAmount} HBAR in revenue...`);
 
         const contract = getContract({
         abi: MODRED_IP_ABI,
@@ -1090,7 +1090,7 @@ export default function App({ thirdwebClient }: AppProps) {
         });
 
       // Show success notification
-      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} XTZ in revenue!`);
+      notifySuccess('Payment Successful', `Successfully paid ${paymentAmount} HBAR in revenue!`);
 
       // Reset form
       setPaymentAmount("");
@@ -1611,7 +1611,7 @@ export default function App({ thirdwebClient }: AppProps) {
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">💰 Amount (XTZ)</label>
+                    <label className="form-label">💰 Amount (HBAR)</label>
                     <input
                       type="number"
                       className="form-input"
@@ -1744,7 +1744,7 @@ export default function App({ thirdwebClient }: AppProps) {
                     
                     <div className="card-field">
                       <span className="card-field-label">Total Revenue</span>
-                      <span className="card-field-value">💰 {formatEther(asset.totalRevenue)} XTZ</span>
+                      <span className="card-field-value">💰 {formatEther(asset.totalRevenue)} HBAR</span>
                     </div>
                     
                     <div className="card-field">
