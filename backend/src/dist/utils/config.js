@@ -13,8 +13,8 @@ const etherlinkTestnet = {
     id: 128123,
     name: 'Etherlink Testnet',
     nativeCurrency: {
-        name: 'XTZ',
-        symbol: 'XTZ',
+        name: 'HBAR',
+        symbol: 'HBAR',
         decimals: 18,
     },
     rpcUrls: {
@@ -37,7 +37,7 @@ const networkConfig = {
     rpcProviderUrl: 'https://node.ghostnet.etherlink.com',
     blockExplorer: 'https://testnet.explorer.etherlink.com',
     chain: etherlinkTestnet,
-    nativeTokenAddress: '0x0000000000000000000000000000000000000000', // Native XTZ token
+    nativeTokenAddress: '0x0000000000000000000000000000000000000000', // Native HBAR token
 };
 // Helper functions
 const validateEnvironmentVars = () => {
