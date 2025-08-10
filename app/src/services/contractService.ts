@@ -391,16 +391,16 @@ export class ContractService {
           const asset = await this.getIPAsset(ownerIPs[i]);
           if (asset) {
             assets.push({
-              tokenId: asset[0].tokenId,
-              owner: asset[0].owner,
-              ipHash: asset[0].ipHash,
-              metadata: asset[0].metadata,
-              isActive: asset[0].isActive,
-              isDisputed: asset[0].isDisputed,
-              registrationDate: asset[0].registrationDate,
-              totalRevenue: asset[0].totalRevenue,
-              royaltyTokens: asset[0].royaltyTokens,
-              tokenBoundAccount: asset[0].tokenBoundAccount,
+              tokenId: asset.tokenId,
+              owner: asset.owner,
+              ipHash: asset.ipHash,
+              metadata: asset.metadata,
+              isActive: asset.isActive,
+              isDisputed: asset.isDisputed,
+              registrationDate: asset.registrationDate,
+              totalRevenue: asset.totalRevenue,
+              royaltyTokens: asset.royaltyTokens,
+              tokenBoundAccount: asset.tokenBoundAccount,
               isEncrypted: false, // Default value since the contract doesn't track this
             });
           }
@@ -430,15 +430,15 @@ export class ContractService {
           const license = await this.getLicense(ipLicenses[i]);
           if (license) {
             licenses.push({
-              licenseId: license[0].licenseId,
-              tokenId: license[0].ipTokenId, // Map ipTokenId to tokenId for frontend compatibility
-              licensee: license[0].licensee,
-              royaltyPercentage: license[0].revenueShare, // Map revenueShare to royaltyPercentage
-              duration: license[0].duration,
-              startDate: license[0].issueDate, // Map issueDate to startDate
-              isActive: license[0].isActive,
-              commercialUse: license[0].commercialUse,
-              terms: license[0].terms,
+              licenseId: license.licenseId,
+              tokenId: license.ipTokenId, // Map ipTokenId to tokenId for frontend compatibility
+              licensee: license.licensee,
+              royaltyPercentage: license.revenueShare, // Map revenueShare to royaltyPercentage
+              duration: license.duration,
+              startDate: license.issueDate, // Map issueDate to startDate
+              isActive: license.isActive,
+              commercialUse: license.commercialUse,
+              terms: license.terms,
             });
           }
         } catch (error) {
