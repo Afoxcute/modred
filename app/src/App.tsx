@@ -22,7 +22,7 @@ import { hederaTestnet } from "viem/chains";
 import CONTRACT_ADDRESS_JSON from "./deployed_addresses.json";
 
 // Backend API configuration
-const BACKEND_URL = "https://modred-production.up.railway.app";
+const BACKEND_URL = "http://localhost:5000";
 
 // File validation and preview utilities
 const MAX_FILE_SIZE_MB = 50; // Maximum file size in megabytes
@@ -1066,7 +1066,7 @@ export default function App({ thirdwebClient }: AppProps) {
 
         const contract = getContract({
         abi: MODRED_IP_ABI,
-          client: thirdwebClient,
+            client: thirdwebClient,
           chain: defineChain(hederaTestnet.id),
         address: CONTRACT_ADDRESS_JSON["ModredIPDeployModule#ModredIP"],
         });
@@ -1131,16 +1131,16 @@ export default function App({ thirdwebClient }: AppProps) {
         params: [BigInt(claimTokenId)],
         });
 
-      const transaction = await sendTransaction({
+        const transaction = await sendTransaction({
         transaction: preparedCall,
         account: account,
-      });
+        });
 
       await waitForReceipt({
-        client: thirdwebClient,
+          client: thirdwebClient,
         chain: defineChain(hederaTestnet.id),
-        transactionHash: transaction.transactionHash,
-      });
+          transactionHash: transaction.transactionHash,
+        });
 
             // Show success notification
       notifySuccess('Royalties Claimed', 'Successfully claimed your royalties!');
@@ -1148,7 +1148,7 @@ export default function App({ thirdwebClient }: AppProps) {
       // Reload data
       await loadContractData();
 
-    } catch (error) {
+      } catch (error) {
       console.error("Error claiming royalties:", error);
       notifyError('Claim Failed', "Failed to claim royalties");
     } finally {
@@ -1400,7 +1400,7 @@ export default function App({ thirdwebClient }: AppProps) {
                     {Array.from(ipAssets.keys()).map((id) => {
                       const asset = ipAssets.get(id);
                       const metadata = parsedMetadata.get(id) || { name: "Unknown" };
-                      return (
+    return (
                         <option key={id} value={id}>
                           #{id} - {metadata.name || asset?.ipHash.substring(0, 10) || 'Unknown'}
                         </option>
@@ -1593,7 +1593,7 @@ export default function App({ thirdwebClient }: AppProps) {
                 <div className="form-grid">
                   <div className="form-group">
                     <label className="form-label">🎯 Select IP Asset</label>
-                    <select
+            <select
                       className="form-select"
                       value={paymentTokenId}
                       onChange={(e) => setPaymentTokenId(Number(e.target.value))}
@@ -1607,13 +1607,13 @@ export default function App({ thirdwebClient }: AppProps) {
                           </option>
                         );
                       })}
-                    </select>
+            </select>
                   </div>
                   
                   <div className="form-group">
                     <label className="form-label">💰 Amount (XTZ)</label>
-                    <input
-                      type="number"
+            <input
+              type="number"
                       className="form-input"
                       value={paymentAmount}
                       onChange={(e) => setPaymentAmount(e.target.value)}
@@ -1669,8 +1669,8 @@ export default function App({ thirdwebClient }: AppProps) {
                   </button>
                 </div>
               </section>
-            </>
-          )}
+          </>
+        )}
         </div>
 
         {/* IP Assets Display */}
@@ -1745,7 +1745,7 @@ export default function App({ thirdwebClient }: AppProps) {
                     <div className="card-field">
                       <span className="card-field-label">Total Revenue</span>
                       <span className="card-field-value">💰 {formatEther(asset.totalRevenue)} XTZ</span>
-                    </div>
+          </div>
                     
                     <div className="card-field">
                       <span className="card-field-label">Royalty Tokens</span>
@@ -1762,7 +1762,7 @@ export default function App({ thirdwebClient }: AppProps) {
                           <div><strong>Raw Metadata:</strong> {asset.metadata}</div>
                           <div><strong>IP Hash:</strong> {asset.ipHash}</div>
                           <div><strong>Parsed Metadata:</strong> {JSON.stringify(metadata, null, 2)}</div>
-                        </div>
+                      </div>
                       </details>
                     )}
                   </div>
@@ -1803,18 +1803,18 @@ export default function App({ thirdwebClient }: AppProps) {
                     )}
                     {license.commercialUse && <span className="badge badge-info">💼 Commercial</span>}
                   </div>
-                </div>
+        </div>
 
                 <div className="card-body">
                   <div className="card-field">
                     <span className="card-field-label">Licensee</span>
                     <span className="card-field-value address">{license.licensee.substring(0, 10)}...</span>
-                  </div>
+        </div>
                   
                   <div className="card-field">
                     <span className="card-field-label">Royalty Rate</span>
                     <span className="card-field-value">💰 {Number(license.royaltyPercentage) / 100}%</span>
-                  </div>
+      </div>
 
                   <div className="card-field">
                     <span className="card-field-label">Duration</span>
